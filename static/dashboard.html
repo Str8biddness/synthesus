@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synthesus 2.0 Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', monospace; background: #0d0d0d; color: #e0e0e0; }
+  .header { background: #111; border-bottom: 1px solid #333; padding: 12px 24px;
+    display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 1.4rem; color: #7af; letter-spacing: 2px; }
+  .badge { background: #1a3; padding: 2px 8px; border-radius: 10px;
+    font-size: 0.7rem; color: #fff; }
+  .tabs { display: flex; background: #111; border-bottom: 1px solid #333; }
+  .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent;
+    font-size: 0.85rem; transition: all 0.2s; }
+  .tab.active { border-bottom-color: #7af; color: #7af; }
+  .tab:hover { background: #1a1a1a; }
+  .panel { display: none; padding: 24px; }
+  .panel.active { display: block; }
+  .query-box { display: flex; gap: 12px; margin-bottom: 20px; }
+  .query-box input { flex: 1; background: #1a1a1a; border: 1px solid #333;
+    color: #e0e0e0; padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; }
+  .query-box button { background: #1a5a9a; color: #fff; border: none;
+    padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+  .query-box button:hover { background: #1a7aff; }
+  .response-box { background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+    padding: 16px; min-height: 200px; font-size: 0.85rem; line-height: 1.6;
+    white-space: pre-wrap; }
+  .meta { display: flex; gap: 16px; margin-top: 10px; font-size: 0.75rem; color: #888; }
+  .stat { background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+    padding: 16px; margin: 8px 0; }
+  .stat h3 { font-size: 0.75rem; color: #888; margin-bottom: 6px; }
+  .stat .val { font-size: 1.5rem; color: #7af; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  #stream-output { background: #0a0a0a; border: 1px solid #222; border-radius: 6px;
+    padding: 12px; height: 300px; overflow-y: auto; font-size: 0.8rem;
+    font-family: monospace; color: #4f4; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>SYNTHESUS 2.0</h1>
+  <span class="badge" id="status-badge">CHECKING...</span>
+  <span style="color:#888;font-size:0.8rem;margin-left:auto">ZO Dual-Hemisphere SI Engine</span>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="showTab('monitor')">Monitor</div>
+  <div class="tab" onclick="showTab('query')">Query</div>
+  <div class="tab" onclick="showTab('stream')">Stream</div>
+  <div class="tab" onclick="showTab('health')">Health</div>
+</div>
+
+<div id="monitor" class="panel active">
+  <div class="grid">
+    <div class="stat"><h3>KERNEL</h3><div class="val" id="k-status">...</div></div>
+    <div class="stat"><h3>MODULE</h3><div class="val" id="k-module">-</div></div>
+    <div class="stat"><h3>CONFIDENCE</h3><div class="val" id="k-conf">-</div></div>
+  </div>
+  <div class="stat" style="margin-top:12px">
+    <h3>LAST RESPONSE</h3>
+    <div id="last-response" style="margin-top:8px;font-size:0.9rem">No queries yet.</div>
+  </div>
+</div>
+
+<div id="query" class="panel">
+  <div class="query-box">
+    <input type="text" id="q-input" placeholder="Enter query..." onkeydown="if(event.key==='Enter')sendQuery()">
+    <button onclick="sendQuery()">Send</button>
+  </div>
+  <div class="response-box" id="q-output">Response will appear here...</div>
+  <div class="meta">
+    <span>Module: <b id="q-module">-</b></span>
+    <span>Confidence: <b id="q-conf">-</b></span>
+    <span>Source: <b id="q-source">-</b></span>
+  </div>
+</div>
+
+<div id="stream" class="panel">
+  <div class="query-box">
+    <input type="text" id="s-input" placeholder="Stream query...">
+    <button onclick="startStream()">Stream</button>
+  </div>
+  <div id="stream-output">Stream output...</div>
+</div>
+
+<div id="health" class="panel">
+  <div class="stat"><h3>API STATUS</h3><div class="val" id="api-status">Checking...</div></div>
+  <div class="stat"><h3>KERNEL PROCESS</h3><div class="val" id="kernel-process">...</div></div>
+</div>
+
+<script>
+const BASE = window.location.origin;
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+async function sendQuery() {
+  const q = document.getElementById('q-input').value.trim();
+  if (!q) return;
+  document.getElementById('q-output').textContent = 'Processing...';
+  try {
+    const r = await fetch(BASE + '/query', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: q})
+    });
+    const d = await r.json();
+    document.getElementById('q-output').textContent = d.response || JSON.stringify(d);
+    document.getElementById('q-module').textContent = d.module || '-';
+    document.getElementById('q-conf').textContent = d.confidence ? d.confidence.toFixed(3) : '-';
+    document.getElementById('q-source').textContent = d.source || '-';
+    document.getElementById('last-response').textContent = d.response;
+    document.getElementById('k-module').textContent = d.module;
+    document.getElementById('k-conf').textContent = d.confidence ? d.confidence.toFixed(3) : '-';
+  } catch(e) { document.getElementById('q-output').textContent = 'Error: ' + e; }
+}
+function startStream() {
+  const q = document.getElementById('s-input').value.trim();
+  if (!q) return;
+  const out = document.getElementById('stream-output');
+  out.textContent = '';
+  const es = new EventSource(BASE + '/stream?q=' + encodeURIComponent(q));
+  es.onmessage = e => { out.textContent += e.data + '\n'; out.scrollTop = out.scrollHeight; };
+  es.onerror = () => es.close();
+}
+async function checkHealth() {
+  try {
+    const r = await fetch(BASE + '/health');
+    const d = await r.json();
+    const ok = d.status === 'ok';
+    document.getElementById('status-badge').textContent = ok ? 'ONLINE' : 'DEGRADED';
+    document.getElementById('status-badge').style.background = ok ? '#1a3' : '#a31';
+    document.getElementById('k-status').textContent = ok ? 'RUNNING' : 'FALLBACK';
+    document.getElementById('api-status').textContent = d.status.toUpperCase();
+    document.getElementById('kernel-process').textContent = d.kernel ? 'ACTIVE' : 'NOT RUNNING';
+  } catch(e) {
+    document.getElementById('status-badge').textContent = 'OFFLINE';
+    document.getElementById('status-badge').style.background = '#a31';
+  }
+}
+checkHealth();
+setInterval(checkHealth, 10000);
+</script>
+</body>
+</html>
