@@ -26,7 +26,6 @@ int main(int argc, char* argv[]) {
         if (line == "quit" || line == "exit") break;
         ctx.store("last_query", line);
         auto result = router.route(line, ctx.recall("context"));
-        // JSON line-delimited output
         std::cout << "{\"r\":\"" << result.response
                   << "\",\"c\":" << result.confidence
                   << ",\"m\":\"" << result.module_used
