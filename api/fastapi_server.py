@@ -5,7 +5,8 @@ import asyncio
 import subprocess
 import json
 import os
-from typing import AsyncIterator, Optional
+import glob as _glob
+from typing import AsyncIterator, Optional, Dict, List, Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,12 +14,189 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from cognitive.cognitive_engine import CognitiveEngine
+
 app = FastAPI(title="Synthesus 2.0", version="2.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
     allow_methods=["*"], allow_headers=["*"])
 
 KERNEL_BIN = os.path.join(os.path.dirname(__file__), "..", "zo_kernel")
+CHARACTERS_DIR = os.path.join(os.path.dirname(__file__), "..", "characters")
 _kernel_proc: Optional[subprocess.Popen] = None
+_character_cache: Dict[str, Dict[str, Any]] = {}
+_cognitive_engines: Dict[str, CognitiveEngine] = {}
+
+
+def _load_character(char_id: str) -> Optional[Dict[str, Any]]:
+    """Load a character's bio + patterns from disk (cached)."""
+    if char_id in _character_cache:
+        return _character_cache[char_id]
+    char_dir = os.path.join(CHARACTERS_DIR, char_id)
+    bio_path = os.path.join(char_dir, "bio.json")
+    pat_path = os.path.join(char_dir, "patterns.json")
+    if not os.path.isdir(char_dir) or not os.path.exists(bio_path):
+        return None
+    with open(bio_path) as f:
+        bio = json.load(f)
+    patterns = {}
+    if os.path.exists(pat_path):
+        with open(pat_path) as f:
+            patterns = json.load(f)
+    _character_cache[char_id] = {"bio": bio, "patterns": patterns}
+    return _character_cache[char_id]
+
+
+def _get_cognitive_engine(char_id: str) -> Optional[CognitiveEngine]:
+    """Get or create a CognitiveEngine for a character."""
+    if char_id in _cognitive_engines:
+        return _cognitive_engines[char_id]
+    char_data = _load_character(char_id)
+    if char_data is None:
+        return None
+    try:
+        engine = CognitiveEngine(
+            character_id=char_id,
+            bio=char_data["bio"],
+            patterns=char_data["patterns"],
+        )
+        _cognitive_engines[char_id] = engine
+        return engine
+    except Exception as e:
+        print(f"[cognitive] Failed to create engine for {char_id}: {e}")
+        return None
+
+
+def _match_pattern(query_text: str, patterns_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Match a query against a character's synthetic + generic patterns.
+
+    Scoring strategy (v3 — strict topic matching):
+    1. Exact trigger match → immediate return (conf 1.0)
+    2. Near-exact: query contains the full trigger as substring → high score
+    3. Token overlap with STRICT requirements:
+       - Must have >= 2 overlapping content words (unless trigger has only 1)
+       - Score uses geometric mean of trigger-coverage and query-coverage
+       - Single-word overlap on a long query scores very low
+    Generic patterns are penalised so domain patterns win on ties.
+    """
+    import re as _re
+    q = query_text.strip().lower()
+
+    # Broad stop-word list to isolate content words
+    _stop = {
+        "the","a","an","is","it","of","in","to","and","or","i","me","my",
+        "you","your","do","does","did","can","could","would","should",
+        "what","how","why","when","where","who","that","this","if",
+        "about","for","with","on","at","by","from","up","out","so",
+        "be","been","am","are","was","were","have","has","had","not",
+        "but","just","more","very","ever","one","thing","like","any",
+        "some","no","all","them","they","we","he","she","it's","i'm",
+        "don't","there","i'll","got","get","know","think","tell",
+        "really","much","way","too","also","here","now","then",
+        "something","anything","everything","nothing","someone",
+        "going","want","need","make","let","go","come","see",
+        "take","give","say","said","look","well","back","even",
+        "still","us","our","his","her","its","their","him",
+        "being","been","into","over","after","before","between",
+        "through","only","other","than","such","will","shall"
+    }
+
+    def _tokenize(text: str) -> set:
+        return set(_re.findall(r'[a-z]+', text)) - _stop
+
+    q_tokens = _tokenize(q)
+
+    synthetic = patterns_data.get("synthetic_patterns", [])
+    generic = patterns_data.get("generic_patterns", [])
+
+    best_match = None
+    best_score = 0.0
+
+    for pat_list, is_generic in [(synthetic, False), (generic, True)]:
+        for pat in pat_list:
+            triggers = pat.get("trigger", [])
+            if isinstance(triggers, str):
+                triggers = [triggers]
+            conf = pat.get("confidence", 0.5)
+
+            for t in triggers:
+                t_lower = t.lower().strip()
+                t_tokens = _tokenize(t_lower)
+
+                # ── Exact match → instant winner ──
+                if t_lower == q:
+                    return pat, 1.0
+
+                score = 0.0
+                overlap = q_tokens & t_tokens
+                n_overlap = len(overlap)
+
+                # ── Full-trigger substring containment ──
+                # The entire trigger phrase appears inside the query
+                if t_lower in q and len(t_lower) >= 4:
+                    specificity = len(t_lower) / max(len(q), 1)
+                    score = conf * (0.7 + 0.3 * specificity)
+
+                # ── Token overlap scoring ──
+                elif t_tokens and q_tokens:
+                    # Require minimum overlap:
+                    #  - 1 word if trigger OR query has <= 2 content tokens
+                    #  - 2 words otherwise (prevents stray single-word matches on long queries)
+                    min_required = 1 if (len(t_tokens) <= 2 or len(q_tokens) <= 2) else 2
+                    if n_overlap >= min_required:
+                        trigger_cov = n_overlap / len(t_tokens)
+                        query_cov = n_overlap / len(q_tokens)
+                        # Geometric mean — punishes cases where one side is tiny
+                        geo_mean = (trigger_cov * query_cov) ** 0.5
+                        score = geo_mean * conf
+
+                # ── Penalise generic patterns ──
+                if is_generic:
+                    score *= 0.7
+
+                if score > best_score:
+                    best_score = score
+                    best_match = pat
+
+    return best_match, best_score
+
+
+# Minimum match quality to accept a pattern (below this → character fallback)
+MATCH_QUALITY_THRESHOLD = 0.55
+
+
+def _character_fallback(query_text: str, char_id: str) -> Dict[str, Any]:
+    """Process a query through character pattern matching (Python fallback)."""
+    char_data = _load_character(char_id)
+    if char_data is None:
+        return {
+            "response": f"Character '{char_id}' not found.",
+            "confidence": 0.0, "module": "character_router",
+            "source": "fallback", "character": char_id
+        }
+    patterns_data = char_data["patterns"]
+    match, match_score = _match_pattern(query_text, patterns_data)
+    if match and match_score >= MATCH_QUALITY_THRESHOLD:
+        return {
+            "response": match["response_template"],
+            "confidence": round(match_score, 4),
+            "module": f"ppbrs_character_{char_id}",
+            "source": "character_pattern",
+            "character": char_id,
+            "pattern_id": match.get("id", "unknown")
+        }
+    # Character fallback string
+    fallback_text = patterns_data.get(
+        "fallback",
+        f"I am {char_data['bio'].get('name', char_id)}. Could you rephrase your question?"
+    )
+    return {
+        "response": fallback_text,
+        "confidence": 0.3, "module": f"ppbrs_character_{char_id}",
+        "source": "character_fallback", "character": char_id
+    }
+
 
 def get_kernel():
     global _kernel_proc
@@ -34,14 +212,23 @@ def get_kernel():
 class QueryRequest(BaseModel):
     query: str = ""
     q: str = ""
+    text: str = ""
     stream: bool = False
     context: str = ""
+    mode: str = "left"       # "left" | "cognitive" | "auto"
+    character: str = ""
+    player_id: str = "default"  # For cognitive engine multi-turn tracking
 
 class QueryResponse(BaseModel):
     response: str
     confidence: float
     module: str
     source: str = "kernel"
+    character: str = ""
+    pattern_id: str = ""
+    emotion: str = ""
+    relationship: Dict = {}
+    debug: Dict = {}
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
@@ -53,15 +240,43 @@ async def root():
 
 @app.post("/query", response_model=QueryResponse)
 async def query(req: QueryRequest):
+    # Resolve the actual query text (support text, query, or q fields)
+    query_text = req.text or req.query or req.q or ""
+
+    # ── Cognitive Engine mode ──
+    if req.mode in ("cognitive", "auto") and req.character:
+        engine = _get_cognitive_engine(req.character)
+        if engine:
+            result = engine.process_query(
+                player_id=req.player_id,
+                query=query_text,
+                thinking_layer_available=False,  # No SLM in test env
+            )
+            return QueryResponse(
+                response=result["response"] or "[ESCALATED — needs Thinking Layer]",
+                confidence=result["confidence"],
+                module=f"cognitive_engine_{req.character}",
+                source=result["source"],
+                character=req.character,
+                pattern_id=result["debug"].get("pattern_matched", "") or "",
+                emotion=result.get("emotion", ""),
+                relationship=result.get("relationship", {}),
+                debug=result.get("debug", {}),
+            )
+
     kernel = get_kernel()
     if kernel is None:
-        # Python fallback
+        # Python fallback - route through character patterns if character mode
+        if req.character:
+            result = _character_fallback(query_text, req.character)
+            return QueryResponse(**result)
+        # Generic fallback
         return QueryResponse(
-            response=f"[FALLBACK] Processed: {req.query}",
+            response=f"[FALLBACK] Processed: {query_text}",
             confidence=0.5, module="python_fallback", source="fallback"
         )
     try:
-        kernel.stdin.write(req.query + "\n")
+        kernel.stdin.write(query_text + "\n")
         kernel.stdin.flush()
         line = kernel.stdout.readline().strip()
         data = json.loads(line)
@@ -108,6 +323,34 @@ async def characters():
 @app.post("/process", response_model=QueryResponse)
 async def process(req: QueryRequest):
     return await query(req)
+
+
+@app.post("/world_state")
+async def set_world_state(flags: Dict[str, Any]):
+    """Set world state flags for all cognitive engines."""
+    from cognitive.world_state_reactor import WorldStateReactor
+    for key, value in flags.items():
+        if value is None:
+            WorldStateReactor.clear_flag(key)
+        else:
+            WorldStateReactor.set_flag(key, value, set_by="api")
+    return {"status": "ok", "active_flags": WorldStateReactor.get_all_flags()}
+
+
+@app.get("/world_state")
+async def get_world_state():
+    """Get current world state flags."""
+    from cognitive.world_state_reactor import WorldStateReactor
+    return {"flags": WorldStateReactor.get_all_flags()}
+
+@app.get("/cognitive_stats")
+async def cognitive_stats():
+    """Get statistics from all active cognitive engines."""
+    stats = {}
+    for char_id, engine in _cognitive_engines.items():
+        stats[char_id] = engine.get_stats()
+    return {"engines": stats}
+
 
 if __name__ == "__main__":
     import uvicorn

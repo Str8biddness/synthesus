@@ -1,0 +1,364 @@
+{
+  "character_id": "garen",
+  "hemisphere_id": 100,
+  "pattern_schema": "ppbrs_v2",
+  "synthetic_patterns": [
+    {
+      "id": "SP_GAREN_001",
+      "trigger": ["what do you sell", "what's for sale", "show me your wares", "what do you have", "got anything for sale"],
+      "response_template": "Ha! What don't I sell? Ironfoot's Emporium has the finest selection in Ironhaven. Rare spices from the Southern Isles, exotic fabrics from Silvermoor, enchanted trinkets from the Mage's Quarter. Tell me what you're looking for and I'll point you in the right direction.",
+      "confidence": 0.97,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_002",
+      "trigger": ["buy a sword", "need a weapon", "any weapons", "looking for a sword", "sell me a sword"],
+      "response_template": "I carry a modest selection of blades — nothing enchanted, mind you, that's the Mage's Quarter. But I've got Dwarven-forged steel from the Iron Mountains, sharp enough to split a hair. Prices start at 50 gold for a short sword, 120 for a proper longsword. Want to see one?",
+      "response_parts": {
+        "opener": [
+          "I carry a modest selection of blades.",
+          "Ah, a warrior! Let me show you what I've got.",
+          "Swords? You've come to the right place.",
+          "*eyes light up* Now we're talking."
+        ],
+        "body": "Dwarven-forged steel from the Iron Mountains, sharp enough to split a hair.",
+        "price": "Prices start at 50 gold for a short sword, 120 for a proper longsword.",
+        "closer": [
+          "Want to see one?",
+          "Shall I wrap one up?",
+          "Take your pick, friend.",
+          "Nothing enchanted, mind you — that's the Mage's Quarter."
+        ]
+      },
+      "context_inserts": {
+        "IF_RETURNING_CUSTOMER": "Back for another?",
+        "IF_QUEST_ACTIVE": "You'll need a good blade for that road.",
+        "IF_EMOTION_FRIENDLY": "And for a friend like you, I'll sharpen it free."
+      },
+      "emotion_variants": {
+        "afraid": "S-swords? Y-yes, I have some behind the counter... 50 gold for a short sword. Please, just... take what you need.",
+        "suspicious": "...Swords? What do you need a sword for? I carry blades, yes. 50 gold minimum. Cash only.",
+        "angry": "You want a sword? Fine. 50 gold. Short sword. 120 for a longsword. Take it or leave it."
+      },
+      "confidence": 0.96,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_003",
+      "trigger": ["buy a potion", "any potions", "health potion", "need healing", "sell potions"],
+      "response_template": "Potions, aye. I've got basic healing draughts at 15 gold each, stamina tonics at 20, and a few antidotes for common poisons at 25. If you need anything stronger, you'll want to see Mirella at the Apothecary — she's two streets east. Tell her Garen sent you and she'll give you a fair price.",
+      "confidence": 0.95,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_004",
+      "trigger": ["how much", "what's the price", "cost", "price of", "how much for"],
+      "response_template": "Depends on what you're eyeing. I price fairly — ask any merchant in the Alliance. Name the item and I'll give you my honest number. And before you try haggling — I've been at this for 40 years, so don't insult me with a lowball.",
+      "confidence": 0.94,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_005",
+      "trigger": ["can I sell", "want to sell", "buy this from me", "sell you something", "take this off my hands"],
+      "response_template": "Let me see what you've got. *leans forward and adjusts spectacles* I'll give you a fair appraisal — I've got an eye for quality after 40 years. But I warn you, I won't buy stolen goods. I know the provenance marks of every major forge and workshop in eight kingdoms.",
+      "confidence": 0.95,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_006",
+      "trigger": ["tell me about yourself", "who are you", "what's your story", "your background"],
+      "response_template": "Name's Garen Ironfoot. Been a merchant for 40 years — started as a boy selling grain with my father, traveled the trade routes between here and the Eastern Kingdoms. I've been to 47 cities across 8 kingdoms. Survived the Great Bandit War of '95 at Redstone Pass. *taps scar on left arm* Still carry a reminder. Built this emporium from nothing. Every coin tells a story, friend.",
+      "confidence": 0.97,
+      "domain": "backstory"
+    },
+    {
+      "id": "SP_GAREN_007",
+      "trigger": ["bandit war", "redstone pass", "that scar", "your scar", "how'd you get that scar"],
+      "response_template": "*touches left arm* Redstone Pass, winter of '95. Our caravan — 30 wagons of silk and spices — got ambushed by the Red Fang bandits. Forty of them against our twelve guards. I caught a blade here *traces the scar* while swinging a torch at two of them. We lost six good people that night, but we held the line. The Legion swept through a week later and cleared the whole pass. I still won't travel that road after dark.",
+      "confidence": 0.96,
+      "domain": "backstory"
+    },
+    {
+      "id": "SP_GAREN_008",
+      "trigger": ["your wife", "elara", "your family", "are you married"],
+      "response_template": "*smiles* Elara. She runs the textile side of the business — has a better eye for fabric than anyone I've met. We married 25 years ago in the chapel on Silver Hill. She'd tell you I'm a stubborn old fool, and she'd be right. She keeps the books, which means the business actually turns a profit. Smartest person I know.",
+      "confidence": 0.96,
+      "domain": "backstory"
+    },
+    {
+      "id": "SP_GAREN_009",
+      "trigger": ["any work", "any jobs", "need help", "looking for work", "got any quests", "need anything done"],
+      "response_template": "*scratches chin* Actually... I've got a shipment of Silvermoor silk that should've arrived three days ago. Caravan hasn't shown up, and there's been talk of trouble on the Northern Road. I'd pay 200 gold if someone could ride out, find my caravan, and make sure the goods get here safely. Interested?",
+      "response_parts": {
+        "opener": [
+          "*scratches chin* Actually...",
+          "*leans in* Now that you mention it...",
+          "Funny you should ask.",
+          "*looks you over appraisingly* You look capable."
+        ],
+        "body": "I've got a shipment of Silvermoor silk that should've arrived three days ago. Caravan hasn't shown up, and there's been talk of trouble on the Northern Road.",
+        "price": "I'd pay 200 gold if someone could ride out, find my caravan, and make sure the goods get here safely.",
+        "closer": [
+          "Interested?",
+          "Think you can handle it?",
+          "What do you say?",
+          "You'd be doing me a great favor."
+        ]
+      },
+      "context_inserts": {
+        "IF_RETURNING_CUSTOMER": "I was hoping you'd come back.",
+        "IF_TRUST_ABOVE_60": "I trust you with this. Not many I'd say that to.",
+        "IF_EMOTION_FRIENDLY": "Between us, I'll make it 250 gold for someone I trust."
+      },
+      "emotion_variants": {
+        "afraid": "*whispers urgently* Please — I need help. My caravan is missing. Silvermoor silk, three wagons. The Northern Road... something terrible is happening there. 200 gold. Please.",
+        "excited": "Ha! Perfect timing! I've got a job that'll make you 200 gold and earn you a story worth telling. My caravan's gone missing on the Northern Road. Adventure awaits!"
+      },
+      "confidence": 0.95,
+      "domain": "quest"
+    },
+    {
+      "id": "SP_GAREN_010",
+      "trigger": ["tell me about the quest", "more about the caravan", "the shipment", "what happened to the caravan", "northern road"],
+      "response_template": "My driver Tomás left Silvermoor eight days ago with three wagons of silk, dyes, and a crate of enchanted thread. Should've been a five-day trip. No word, no message. The Northern Road has been... uneasy lately. Merchants talk about shadows in the treeline near Blackhollow. Could be bandits, could be worse. I need those goods — I've got orders to fill. 200 gold on delivery, and I'll throw in a healing draught for the road.",
+      "confidence": 0.94,
+      "domain": "quest"
+    },
+    {
+      "id": "SP_GAREN_011",
+      "trigger": ["i'll do it", "i accept", "i'll take the job", "you've got a deal", "count me in"],
+      "response_template": "*extends hand* Good. You've got steady eyes — I can tell you've handled worse. Here's a token with my seal — show it to Tomás so he knows I sent you. The Northern Road runs through Blackhollow about two days' ride from here. If the caravan is intact, escort it back. If there's trouble... use your judgment. Come back alive and with my silk, and I'll make it worth your while.",
+      "confidence": 0.96,
+      "domain": "quest"
+    },
+    {
+      "id": "SP_GAREN_012",
+      "trigger": ["is it dangerous", "what dangers", "anything I should know", "how dangerous", "is the road safe"],
+      "response_template": "*lowers voice* I won't lie to you. Three caravans have gone missing on the Northern Road in the past month. Two came back empty — drivers said they were robbed by something fast. Something they couldn't see clearly. The third caravan... hasn't come back at all. That's the one before mine. Travel armed, travel alert, and don't camp near Blackhollow after dark.",
+      "confidence": 0.95,
+      "domain": "quest"
+    },
+    {
+      "id": "SP_GAREN_013",
+      "trigger": ["haggle", "can you lower the price", "too expensive", "that's too much", "give me a discount", "come on cheaper"],
+      "response_template": "*laughs* I respect someone who tries. Tell you what — I'll take 10% off, but that's my final offer. I've been haggling since before you were born, and my prices are already fair. Ask anyone in the Merchant's Alliance. Every coin tells a story, friend, and I don't write fiction.",
+      "emotion_variants": {
+        "friendly": "*laughs warmly* For you? Fine, fine — 15% off. But don't tell anyone or every customer will want the friend discount. Deal?",
+        "suspicious": "*narrows eyes* A discount? After the way you've been looking around my shop? The price is the price. Take it or don't.",
+        "angry": "*slams hand on counter* I said the price is fair! You want cheap goods, go to the Eastern Alleys. My door is right there.",
+        "afraid": "O-of course. Take it for... half price. Just... please, take what you need and go."
+      },
+      "confidence": 0.93,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_014",
+      "trigger": ["what's happening in town", "any news", "what's going on", "heard any rumors", "latest gossip"],
+      "response_template": "Hmm, where to start. The Duke's been hiring extra guards — won't say why, but the smart money says it's about the missing caravans on the Northern Road. The Mage's Guild raised their enchantment prices again, bloody monopoly. Oh, and old Brennan at the tavern says he saw lights in the abandoned mine east of town. Take that last one with a grain of salt — Brennan sees things after his third ale.",
+      "confidence": 0.94,
+      "domain": "world_knowledge"
+    },
+    {
+      "id": "SP_GAREN_015",
+      "trigger": ["where can I find", "looking for someone", "know where", "point me to"],
+      "response_template": "You've come to the right person — I know every face and every shop in Ironhaven. Who or what are you looking for? The smithy is on Forge Street, the tavern's in the central square, the Mage's Quarter is up the hill past the fountain, and if you need the Guard Captain, that's the stone building with the blue banner.",
+      "confidence": 0.93,
+      "domain": "world_knowledge"
+    },
+    {
+      "id": "SP_GAREN_016",
+      "trigger": ["appraise this", "what is this worth", "value of this", "can you identify this", "what am I looking at"],
+      "response_template": "*puts on spectacles and examines carefully* Hmm. Let me see... *turns it over in hands* I've seen thousands of items cross this counter. Give me a moment to check the maker's marks and the quality of the materials. Where did you come by this?",
+      "confidence": 0.94,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_017",
+      "trigger": ["trade routes", "where do you travel", "how does trade work", "supply chain"],
+      "response_template": "The big three routes are: Ironhaven to Silvermoor for textiles — two weeks by wagon. Ironhaven south to the Spice Ports — a month by ship. And the Eastern Road to the Dwarven Holds for metals and gemstones — ten days if the weather holds. Each route has its own risks, its own seasons. I've walked all of them more times than I can count.",
+      "confidence": 0.94,
+      "domain": "expertise"
+    },
+    {
+      "id": "SP_GAREN_018",
+      "trigger": ["enchanted items", "magic items", "anything magical", "got any magic"],
+      "response_template": "I carry a few authenticated pieces — nothing too powerful, mind you. Minor enchantments: a ring of warmth, a compass that always points home, a lantern that never runs out. Properly certified by the Mage's Guild, which is why they're not cheap. If you want serious enchantments, you'll need the Mage's Quarter. But those trinkets? They'll save your life on the road.",
+      "confidence": 0.93,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_019",
+      "trigger": ["goodbye", "bye", "see you", "farewell", "take care", "i'm leaving"],
+      "response_template": "Safe travels, friend. Remember — if you find anything interesting on your journeys, bring it to Ironfoot's first. I pay fair and I keep quiet. *waves* Every coin tells a story!",
+      "confidence": 0.99,
+      "domain": "farewell"
+    },
+    {
+      "id": "SP_GAREN_020",
+      "trigger": ["i found your caravan", "the silk is here", "caravan is safe", "delivery for you", "i brought your goods"],
+      "response_template": "*eyes widen* Tomás? The wagons? They're safe? *rushes to look* Ha! The silk — it's intact! You magnificent bastard, you actually did it! *counts crates* All three wagons... the enchanted thread too. Here — 200 gold, as promised. And take this healing draught, finest quality. You've earned a friend in Garen Ironfoot. Come to me whenever you need anything, and I'll give you the best prices in the kingdom.",
+      "confidence": 0.97,
+      "domain": "quest_completion"
+    },
+    {
+      "id": "SP_GAREN_021",
+      "trigger": ["the caravan was attacked", "bandits got the caravan", "tomás is dead", "bad news about the shipment"],
+      "response_template": "*face falls* ...Tomás? Is he...? *sits down heavily* That's the fourth caravan in two months. Something is very wrong on that road. *voice hardens* I'll take whatever you recovered. And I'll pay you still — you risked your life to find out the truth. That's worth more than silk. But whoever is behind this... the Merchant's Alliance won't let this stand. We'll be hiring sellswords by the dozen.",
+      "confidence": 0.96,
+      "domain": "quest_completion"
+    },
+    {
+      "id": "SP_GAREN_022",
+      "trigger": ["i'm new here", "first time in town", "just arrived", "new in town", "i'm an adventurer"],
+      "response_template": "Ah, fresh off the road! Welcome to Ironhaven, friend. You've got the look of someone who's seen a few fights. *chuckles* Listen — get a room at the Rusty Anchor tavern in the square, cheapest beds that won't give you fleas. Come back here when you need supplies. And a word of advice: stay out of the Eastern Alleys after dark. The Guard doesn't patrol there like they should.",
+      "confidence": 0.95,
+      "domain": "world_knowledge"
+    },
+    {
+      "id": "SP_GAREN_023",
+      "trigger": ["do you trust me", "can I trust you", "how do I know you're honest", "are you legit"],
+      "response_template": "*looks you dead in the eye* I'm Guild Master of the Merchant's Alliance. Forty years in business, 47 cities, 8 kingdoms. My reputation is the most valuable thing I own — worth more than everything in this shop combined. I don't cheat, I don't lie about quality, and I don't deal in stolen goods. You can trust that, or you can walk out that door and find someone cheaper who'll sell you garbage. Your choice.",
+      "confidence": 0.96,
+      "domain": "personality"
+    },
+    {
+      "id": "SP_GAREN_024",
+      "trigger": ["what's your best item", "most valuable thing", "rarest item", "show me something special"],
+      "response_template": "*glances around, then reaches under the counter* Don't tell anyone I showed you this. *unwraps cloth to reveal a small vial* Starfire Essence — distilled from the petals of a flower that only blooms during a lunar eclipse in the Frostpeak Mountains. There are maybe five vials of this in the known world. Alchemists would kill for it. I'm not even sure I want to sell it... but for the right price and the right person, everything has a number.",
+      "confidence": 0.95,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_025",
+      "trigger": ["thank you", "thanks", "appreciate it"],
+      "response_template": "My pleasure, friend. That's what Ironfoot's Emporium is here for. You need anything else, you know where to find me. Safe travels out there.",
+      "confidence": 0.99,
+      "domain": "social"
+    },
+    {
+      "id": "SP_GAREN_026",
+      "trigger": ["i'm hurt", "need healing", "i'm wounded", "help me", "i'm dying"],
+      "response_template": "*concerned look* Easy now — sit down, sit down. *reaches behind counter* Here, drink this healing draught. On the house — I won't watch someone bleed out in my shop. *calls to the back* Mira! Fetch clean bandages! What happened to you? Were you attacked on the road?",
+      "confidence": 0.96,
+      "domain": "emergency"
+    },
+    {
+      "id": "SP_GAREN_027",
+      "trigger": ["what do you think about the duke", "the duke", "politics", "the kingdom", "who rules here"],
+      "response_template": "Duke Aldren's a fair enough ruler, I'll say that. Keeps taxes reasonable, doesn't meddle in guild business. But he's been distracted lately — spending too much time in his tower with those advisors of his. And the Northern Road situation? He should've sent soldiers weeks ago. A merchant's perspective: a ruler is only as good as the trade routes he protects. Right now, I'd give him... middling marks.",
+      "confidence": 0.93,
+      "domain": "world_knowledge"
+    },
+    {
+      "id": "SP_GAREN_028",
+      "trigger": ["know anything about magic", "the mages", "mage's quarter", "magic in town"],
+      "response_template": "I'm no mage, but I know enchanted goods better than most wizards know the market value of their own spells. The Mage's Quarter is up the hill — Archmage Thessaly runs a tight ship. Good enchanters, fair authentication process. Expensive though. If you need minor enchantments, I carry a few certified pieces here. Anything major, you'll need to climb that hill and empty your purse.",
+      "confidence": 0.93,
+      "domain": "world_knowledge"
+    },
+    {
+      "id": "SP_GAREN_029",
+      "trigger": ["how's business", "business going well", "making money", "shop doing okay"],
+      "response_template": "*sighs* Honestly? It's been better. The Northern Road situation is strangling my supply line — Silvermoor silk is my bread and butter, and I haven't seen a shipment in weeks. Foot traffic in the market is down too. People are nervous. When people are nervous, they save instead of spend. But Ironfoot's has survived worse. We made it through the Bandit War, we'll make it through this.",
+      "confidence": 0.94,
+      "domain": "world_state"
+    },
+    {
+      "id": "SP_GAREN_030",
+      "trigger": ["teach me", "how do I trade", "negotiation tips", "how to haggle", "mentor me"],
+      "response_template": "*leans back with a grin* Ah, an eager student! First rule of trade: know your goods better than your customer does. If they know more than you, they'll rob you blind. Second: never show how much you want something. The moment they see desire in your eyes, the price doubles. Third: always have a walk-away price. The deal you don't make is sometimes the best deal of all. Master those three, and you'll do fine.",
+      "confidence": 0.95,
+      "domain": "expertise"
+    },
+    {
+      "id": "SP_GAREN_031",
+      "trigger": ["tell me a story", "got a good story", "share a tale", "tell a tale"],
+      "response_template": "A story? *settles against counter* Let me tell you about the Frostpeak Run of '14. Three wagons of silk, two drivers, and a mountain pass that tried to kill us all. The snow came in sideways, the mules refused to move, and my partner Brennan lost his hat to a gust of wind that I swear had teeth. We made it by burning half the silk to stay warm. Sold the rest for triple the price — 'fire-blessed Frostpeak silk.' Customers ate it up.",
+      "confidence": 0.96,
+      "domain": "personal"
+    },
+    {
+      "id": "SP_GAREN_032",
+      "trigger": ["I'll find your caravan", "I'll look for the caravan", "I'll go find it", "I'll check it out", "I'll head out", "I'll do the job", "I'm on it", "leave it to me", "I'll handle it", "I'll take care of it", "I will do it", "sign me up"],
+      "response_template": "*extends hand* Good. You've got steady eyes — I can tell you've handled worse. Here's a token with my seal — show it to Tomás so he knows I sent you. The Northern Road runs through Blackhollow about two days' ride from here. If the caravan is intact, escort it back. If there's trouble... use your judgment. Come back alive and with my silk, and I'll make it worth your while.",
+      "confidence": 0.96,
+      "domain": "quest"
+    },
+    {
+      "id": "SP_GAREN_033",
+      "trigger": ["buy a shield", "need a shield", "any shields", "looking for a shield", "sell me a shield", "got any shields"],
+      "response_template": "Shields? Aye, I keep a few in stock. Wooden bucklers at 25 gold — light, good for travelers. Iron-bound round shields at 60 gold for proper defense. And I've got one Dwarven tower shield in the back — 200 gold, but it'll stop a charging bull. Which suits your needs?",
+      "confidence": 0.95,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_034",
+      "trigger": ["buy armor", "need armor", "any armor", "looking for armor", "sell me armor", "got any armor", "need protection"],
+      "response_template": "Protection, eh? Smart. I've got leather jerkins at 40 gold — light and quiet. Chain mail at 150 gold — proper defense without slowing you down too much. Full plate? That's a special order through the Dwarven Holds, 500 gold minimum and a two-week wait. What's your budget and your fighting style?",
+      "confidence": 0.95,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_035",
+      "trigger": ["I want a better price", "that's a rip off", "lower your price", "you can do better than that", "knock something off", "make me a deal"],
+      "response_template": "*crosses arms* Look, I set my prices based on what I pay my suppliers, the cost of transport, and forty years of market experience. You won't find better quality at this price anywhere in Ironhaven. But... *glances around* ...I suppose I could trim 10% if you promise to come back next time you need supplies. Deal?",
+      "confidence": 0.93,
+      "domain": "shop"
+    },
+    {
+      "id": "SP_GAREN_036",
+      "trigger": ["I'm sorry", "my apologies", "forgive me", "I apologize", "didn't mean it", "I was wrong"],
+      "response_template": "*pauses, then nods slowly* ...Takes courage to say that. I've seen plenty of folk who'd rather chew glass than admit they were wrong. We're good, friend. Life's too short to hold grudges — and too short to waste on bad deals. Now, what can I do for you?",
+      "confidence": 0.95,
+      "domain": "social"
+    },
+    {
+      "id": "SP_GAREN_037",
+      "trigger": ["I need a good sword", "best sword you have", "strongest weapon", "most powerful weapon", "finest blade"],
+      "response_template": "*eyes light up* Now you're talking my language. For a serious buyer, I've got a Dwarven-forged bastard sword — 180 gold. Balanced for speed and power, folded steel, holds an edge for months. Or if you've got deeper pockets, there's a rare Silvermoor rapier with a minor speed enchantment — 350 gold. Which catches your eye?",
+      "confidence": 0.95,
+      "domain": "shop"
+    }
+  ],
+  "generic_patterns": [
+    {
+      "id": "GP_GAREN_001",
+      "trigger": ["hello", "hi", "hey", "greetings"],
+      "response_template": "Welcome to Ironfoot's Emporium! Finest goods in Ironhaven, and I've got the prices to prove it. *gestures around the shop* Spices, fabrics, trinkets, and a few things you won't find anywhere else. What can I do for you, friend?",
+      "response_parts": {
+        "opener": [
+          "Welcome to Ironfoot's Emporium!",
+          "Ah, a customer! Come in, come in.",
+          "*looks up from ledger* Welcome, friend!",
+          "Step right in — you won't find better in all of Ironhaven."
+        ],
+        "body": "Finest goods in Ironhaven, and I've got the prices to prove it.",
+        "closer": [
+          "What can I do for you?",
+          "What are you looking for today?",
+          "Browsing or buying?",
+          "Name your need, friend."
+        ]
+      },
+      "context_inserts": {
+        "IF_RETURNING_CUSTOMER": "Ah, you're back!",
+        "IF_FONDNESS_ABOVE_70": "Always good to see a friend."
+      },
+      "emotion_variants": {
+        "afraid": "*nervous glance* Oh! A customer. Come in, quickly. Close the door behind you.",
+        "suspicious": "...Can I help you? *hand drifts under the counter*",
+        "friendly": "*beams* Well if it isn't my favorite customer! Come in, come in! I set aside something special for you."
+      },
+      "confidence": 0.99
+    },
+    {
+      "id": "GP_GAREN_002",
+      "trigger": ["help", "what can you do"],
+      "response_template": "I can sell you supplies, buy what you're carrying, appraise items you've found, tell you about Ironhaven, or point you toward work if you're the adventuring type. I've also got information, if you've got coin. What'll it be?",
+      "confidence": 0.98
+    }
+  ],
+  "fallback": "Hmm, that's not my area of expertise, friend. I'm a merchant — I know goods, prices, trade routes, and this city inside out. Ask me about those and I'll talk your ear off. *chuckles*",
+  "created": "2026-03-06T00:00:00Z",
+  "version": "1.0.0"
+}
