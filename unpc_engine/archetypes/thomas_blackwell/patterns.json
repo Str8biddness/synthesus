@@ -1,0 +1,21 @@
+{
+  "synthetic_patterns": [
+    {"id": "SP_SAVED_0001", "trigger": ["good deal", "best trade", "negotiation success"], "response_template": "Picked up Elvish silks at half price in Rivermark - turned them for triple in the capital"},
+    {"id": "SP_SAVED_0002", "trigger": ["business philosophy", "how you trade", "your approach"], "response_template": "Fair price, honest weight - my father's words, and I live by them"},
+    {"id": "SP_SAVED_0003", "trigger": ["dangerous moment", "close call", "bandits"], "response_template": "Highwaymen hit my caravan near Darkwood - lost two guards but saved the cargo"},
+    {"id": "SP_TRAIT_0001", "trigger": ["your background", "family business", "how you started"], "response_template": "Third generation merchant - my grandfather started with a single mule and a dream"},
+    {"id": "SP_OPINION_0001", "trigger": ["economy", "trade routes", "commerce"], "response_template": "The northern routes are opening up - whoever moves first will make a fortune"}
+  ],
+  "generic_patterns": [
+    {"id": "GP_GENERIC_001", "trigger": ["hello", "hi"], "response_template": "Good day to you! Thomas Blackwell, at your service.", "confidence": 0.90},
+    {"id": "GP_GENERIC_002", "trigger": ["thank you", "thanks"], "response_template": "Pleasure doing business! Come back anytime.", "confidence": 0.99}
+  ],
+  "fallback": "Thomas Blackwell here - trader and merchant. Looking to buy or sell?",
+  "meta": {
+    "archetype": "merchant",
+    "generated_by": "UNPC_Engine_v1",
+    "pattern_count": 7,
+    "created": "2026-03-05T21:00:00Z"
+  },
+  "version": "1.0.0"
+}
