@@ -12,7 +12,15 @@
     "voice_profile": "neutral_technical",
     "tts_voice": "en_US-ryan-medium"
   },
-  "knowledge_domains": ["coding", "devops", "debugging", "api_integration", "architecture"],
+  "knowledge_domains": [
+    "coding",
+    "devops",
+    "debugging",
+    "api_integration",
+    "architecture"
+  ],
   "pattern_count": 22,
-  "created": "2026-03-05T00:00:00Z"
+  "created": "2026-03-05T00:00:00Z",
+  "id": "lexis",
+  "name": "Lexis"
 }

@@ -32,7 +32,8 @@ def get_kernel():
     return _kernel_proc
 
 class QueryRequest(BaseModel):
-    query: str
+    query: str = ""
+    q: str = ""
     stream: bool = False
     context: str = ""
 
@@ -90,6 +91,23 @@ async def stream(q: str):
         else:
             yield {"data": json.dumps({"r": f"[FALLBACK] {q}", "c": 0.5, "m": "fallback"})}
     return EventSourceResponse(generator())
+
+
+
+@app.get("/characters")
+async def characters():
+    import glob, json as _json
+    chars = []
+    for p in glob.glob("characters/*/bio.json") + glob.glob("synth/*/bio.json"):
+        try:
+            with open(p) as fh: d = _json.load(fh)
+            chars.append({"id": d.get("id",""), "name": d.get("name","")})
+        except: pass
+    return {"characters": chars}
+
+@app.post("/process", response_model=QueryResponse)
+async def process(req: QueryRequest):
+    return await query(req)
 
 if __name__ == "__main__":
     import uvicorn
