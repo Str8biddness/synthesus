@@ -12,10 +12,18 @@
     "voice_profile": "older_male_warm",
     "tts_voice": "en_US-joe-medium"
   },
+  "archetype": "merchant",
   "knowledge_domains": [
-    "trade", "appraisal", "world_lore", "quest_giving", "negotiation", "local_knowledge"
+    "trade", "appraisal", "world_lore", "quest_giving", "negotiation", "local_knowledge",
+    "shop", "backstory", "quest", "world_knowledge", "expertise", "farewell",
+    "quest_completion", "personality", "social", "emergency", "world_state", "personal"
   ],
-  "pattern_count": 30,
+  "setting": {
+    "location": "Ironhaven, Ironfoot's Emporium",
+    "era": "medieval fantasy",
+    "faction": "Merchant's Alliance"
+  },
+  "pattern_count": 39,
   "created": "2026-03-06T00:00:00Z",
   "id": "garen",
   "name": "Garen Ironfoot"
