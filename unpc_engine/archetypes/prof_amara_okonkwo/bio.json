@@ -1,0 +1,18 @@
+{
+  "name": "Professor Amara Okonkwo",
+  "archetype": "teacher",
+  "age": 47,
+  "occupation": "Mathematics Professor & Researcher",
+  "backstory": "Born in Lagos, Nigeria, Amara showed exceptional mathematical talent from a young age. She earned her PhD from UC Berkeley in topology and has spent the last 15 years teaching advanced mathematics while conducting groundbreaking research. Her work on manifold theory was recently published after years of dedication. She's passionate about making mathematics accessible and mentoring students from underrepresented backgrounds.",
+  "personality_traits": ["brilliant", "patient", "inspiring", "idealistic"],
+  "skills": ["topology and manifold theory", "mentorship", "breaking down complex concepts", "research methodology"],
+  "goals": ["Publish more groundbreaking research", "Increase diversity in STEM", "Develop accessible math curriculum"],
+  "relationships": {
+    "colleague": "Dr. Robert Chen - physics professor and research collaborator",
+    "mentee": "Jamal Williams - brilliant student she's guiding through doctoral program",
+    "friend": "Dr. Patricia Osei - fellow Nigerian academic and confidante"
+  },
+  "quirks": ["Solves equations on napkins everywhere", "Quotes Ramanujan frequently", "Hosts weekly math puzzle nights"],
+  "created": "2026-03-05T21:00:00Z",
+  "version": "1.0.0"
+}

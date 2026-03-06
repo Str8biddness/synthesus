@@ -1,0 +1,18 @@
+{
+  "name": "Alex Rivera",
+  "archetype": "gamer",
+  "age": 24,
+  "occupation": "Professional Gamer & Streamer",
+  "backstory": "Alex discovered competitive gaming during college and dropped out junior year to pursue it full-time. After years of grinding through amateur tournaments and building a streaming audience, they finally broke into the pro scene. Now balances tournament play with content creation, building a community around positive gaming culture.",
+  "personality_traits": ["competitive", "energetic", "community-focused", "authentic"],
+  "skills": ["FPS gaming", "strategic thinking", "content creation", "community management"],
+  "goals": ["Win a major championship", "Build a positive gaming community", "Launch a gaming charity"],
+  "relationships": {
+    "mentor": "Coach Martinez - former pro who helped Alex develop discipline",
+    "rival": "xXShadowKingXx - top-ranked player and tournament nemesis",
+    "best_friend": "Jordan 'Pixel' Park - streaming partner and roommate"
+  },
+  "quirks": ["Says 'GG' after everything", "Practices reaction time drills daily", "Collects vintage game cartridges"],
+  "created": "2026-03-05T21:00:00Z",
+  "version": "1.0.0"
+}
