@@ -5,55 +5,201 @@
   "synthetic_patterns": [
     {
       "id": "SP_LEXIS_001",
-      "trigger": ["api error", "api issue", "api not working"],
+      "trigger": ["api error", "api issue", "api not working", "api returning error"],
       "response_template": "Check: 1) API key validity and headers, 2) Request payload structure, 3) Rate limits. Use curl -v for verbose logging. What endpoint are you hitting?",
       "confidence": 0.97,
       "domain": "debugging"
     },
     {
       "id": "SP_LEXIS_002",
-      "trigger": ["docker build failed", "docker error", "dockerfile issue"],
+      "trigger": ["docker build failed", "docker error", "dockerfile issue", "container won't start"],
       "response_template": "Dockerfile syntax errors typically stem from: invalid base image tags, incorrect COPY/ADD paths, or missing RUN dependencies. Share the error line number.",
       "confidence": 0.95,
       "domain": "devops"
     },
     {
       "id": "SP_LEXIS_003",
-      "trigger": ["git merge conflict", "merge conflict", "resolve conflict"],
+      "trigger": ["git merge conflict", "merge conflict", "resolve conflict", "git conflict"],
       "response_template": "Run: git status → identify conflict files → edit manually → git add <file> → git commit. Use git diff to see changes. Do you need a specific file resolved?",
       "confidence": 0.96,
       "domain": "coding"
     },
     {
       "id": "SP_LEXIS_004",
-      "trigger": ["rest api design", "api best practices", "design api"],
+      "trigger": ["rest api design", "api best practices", "design api", "api architecture"],
       "response_template": "Follow REST principles: Use HTTP verbs (GET/POST/PUT/DELETE), nouns for endpoints, versioning (/v1/), and return standard codes (200, 201, 400, 404). Need schema examples?",
       "confidence": 0.94,
       "domain": "architecture"
     },
     {
       "id": "SP_LEXIS_005",
-      "trigger": ["debug python", "python error", "traceback"],
+      "trigger": ["debug python", "python error", "traceback", "python traceback"],
       "response_template": "Read the traceback bottom-up. Check: 1) Variable types (print(type(var))), 2) Import paths, 3) Function signatures. Paste the error if you need specifics.",
       "confidence": 0.93,
       "domain": "debugging"
+    },
+    {
+      "id": "SP_LEXIS_006",
+      "trigger": ["kubernetes error", "k8s issue", "pod crash", "pod not running"],
+      "response_template": "Start with: kubectl describe pod <name> for events, kubectl logs <name> for output. Check: resource limits, image pull errors, readiness probes. CrashLoopBackOff usually means the container exits immediately — check your entrypoint.",
+      "confidence": 0.94,
+      "domain": "devops"
+    },
+    {
+      "id": "SP_LEXIS_007",
+      "trigger": ["database slow", "query slow", "sql performance", "slow query"],
+      "response_template": "Run EXPLAIN ANALYZE on the query. Look for sequential scans on large tables — those need indexes. Check for N+1 patterns in your ORM. Common fixes: add index, rewrite JOIN order, add LIMIT.",
+      "confidence": 0.95,
+      "domain": "debugging"
+    },
+    {
+      "id": "SP_LEXIS_008",
+      "trigger": ["ci cd pipeline", "setup pipeline", "github actions", "deploy pipeline"],
+      "response_template": "Standard CI/CD pipeline: lint → test → build → deploy. Use GitHub Actions, GitLab CI, or Jenkins. Cache dependencies between runs. Keep builds under 10 minutes. Gate production deploys on test passage.",
+      "confidence": 0.93,
+      "domain": "devops"
+    },
+    {
+      "id": "SP_LEXIS_009",
+      "trigger": ["cors error", "cors issue", "access control allow origin", "cross origin"],
+      "response_template": "CORS errors mean the server isn't returning proper Access-Control-Allow-Origin headers. Fix on the backend, not the frontend. Never use * in production — whitelist specific origins. Check preflight OPTIONS handling.",
+      "confidence": 0.96,
+      "domain": "debugging"
+    },
+    {
+      "id": "SP_LEXIS_010",
+      "trigger": ["authentication setup", "implement auth", "jwt setup", "oauth setup"],
+      "response_template": "For session-based: use httpOnly cookies. For stateless: JWT with RS256, short expiry (15min), refresh tokens in secure storage. For third-party: OAuth2 authorization code flow. Never store tokens in localStorage.",
+      "confidence": 0.94,
+      "domain": "architecture"
+    },
+    {
+      "id": "SP_LEXIS_011",
+      "trigger": ["write unit tests", "testing strategy", "how to test", "test coverage"],
+      "response_template": "Test pyramid: many unit tests, fewer integration tests, minimal E2E. Unit tests should be fast, isolated, and test one behavior. Mock external deps, not internal logic. Aim for 80% coverage on business logic.",
+      "confidence": 0.93,
+      "domain": "coding"
+    },
+    {
+      "id": "SP_LEXIS_012",
+      "trigger": ["nginx config", "reverse proxy", "load balancer setup", "nginx error"],
+      "response_template": "Nginx as reverse proxy: upstream block for backends, proxy_pass in location. Common errors: missing trailing slash in proxy_pass, incorrect upstream host. Test config with nginx -t before reload.",
+      "confidence": 0.92,
+      "domain": "devops"
+    },
+    {
+      "id": "SP_LEXIS_013",
+      "trigger": ["memory leak", "high memory usage", "out of memory", "oom killed"],
+      "response_template": "Profile first: use valgrind (C/C++), tracemalloc (Python), or Chrome DevTools heap snapshot (JS). Common causes: unbounded caches, event listener accumulation, circular references. Check container memory limits vs actual usage.",
+      "confidence": 0.95,
+      "domain": "debugging"
+    },
+    {
+      "id": "SP_LEXIS_014",
+      "trigger": ["microservices design", "service architecture", "break up monolith", "service boundaries"],
+      "response_template": "Split by business domain, not technical layer. Each service owns its data store. Communicate async (message queues) where possible. Only go microservices if you have the team size to support it — under 20 engineers, a modular monolith is usually better.",
+      "confidence": 0.93,
+      "domain": "architecture"
+    },
+    {
+      "id": "SP_LEXIS_015",
+      "trigger": ["ssl certificate", "https setup", "tls error", "certificate expired"],
+      "response_template": "Use Let's Encrypt for free certs with auto-renewal via certbot. Check cert chain with: openssl s_client -connect host:443. Common issues: expired cert, wrong CN/SAN, missing intermediate CA. Set up auto-renewal cron.",
+      "confidence": 0.94,
+      "domain": "devops"
+    },
+    {
+      "id": "SP_LEXIS_016",
+      "trigger": ["environment variables", "config management", "env setup", "secrets management"],
+      "response_template": "Never hardcode secrets. Use .env files locally (gitignored), environment variables in CI/CD, and a secrets manager (Vault, AWS Secrets Manager) in production. 12-factor app principle: config belongs in the environment.",
+      "confidence": 0.92,
+      "domain": "devops"
+    },
+    {
+      "id": "SP_LEXIS_017",
+      "trigger": ["websocket", "real-time communication", "socket connection", "websocket error"],
+      "response_template": "WebSockets provide full-duplex communication. Use ws:// (or wss:// for TLS). Handle reconnection logic client-side with exponential backoff. For scaling, use Redis pub/sub or a message broker behind the socket server.",
+      "confidence": 0.91,
+      "domain": "architecture"
+    },
+    {
+      "id": "SP_LEXIS_018",
+      "trigger": ["dns issue", "domain not resolving", "dns not working", "dns error"],
+      "response_template": "Check DNS resolution: dig <domain> or nslookup. Verify A/CNAME records at your registrar. TTL matters — changes can take hours to propagate. Flush local cache: systemd-resolve --flush-caches (Linux) or ipconfig /flushdns (Windows).",
+      "confidence": 0.95,
+      "domain": "debugging"
+    },
+    {
+      "id": "SP_LEXIS_019",
+      "trigger": ["code review", "pr review", "review best practices", "code quality"],
+      "response_template": "Good code review checks: correctness, edge cases, naming clarity, test coverage, and security. Keep PRs small (<400 lines). Review logic, not style — automate style with linters. Be kind in comments — suggest, don't demand.",
+      "confidence": 0.91,
+      "domain": "coding"
+    },
+    {
+      "id": "SP_LEXIS_020",
+      "trigger": ["logging best practices", "how to log", "structured logging", "log levels"],
+      "response_template": "Use structured logging (JSON format). Log levels: DEBUG for dev, INFO for flow, WARN for recoverable issues, ERROR for failures. Include request IDs for tracing. Never log passwords, tokens, or PII. Ship logs to a central aggregator.",
+      "confidence": 0.92,
+      "domain": "devops"
+    },
+    {
+      "id": "SP_LEXIS_021",
+      "trigger": ["python virtual environment", "venv", "pip install error", "dependency conflict"],
+      "response_template": "Always use a virtual environment: python -m venv .venv && source .venv/bin/activate. Pin dependencies with pip freeze > requirements.txt. For complex projects, use poetry or pipenv for lockfiles. Dependency conflicts usually mean two packages need different versions of the same dep.",
+      "confidence": 0.93,
+      "domain": "coding"
+    },
+    {
+      "id": "SP_LEXIS_022",
+      "trigger": ["caching strategy", "redis cache", "how to cache", "cache invalidation"],
+      "response_template": "Cache the expensive stuff: DB queries, API responses, computed results. Use Redis or Memcached. Set TTLs — don't cache forever. Invalidation strategies: TTL-based (simple), event-based (accurate), or write-through (consistent). Remember: there are only two hard problems...",
+      "confidence": 0.92,
+      "domain": "architecture"
+    },
+    {
+      "id": "SP_LEXIS_023",
+      "trigger": ["git rebase", "git rebase vs merge", "clean git history", "squash commits"],
+      "response_template": "Rebase for clean linear history on feature branches. Merge for preserving branch topology on main. Interactive rebase (git rebase -i) to squash WIP commits. Golden rule: never rebase shared branches. Use reflog if you mess up.",
+      "confidence": 0.94,
+      "domain": "coding"
+    },
+    {
+      "id": "SP_LEXIS_024",
+      "trigger": ["race condition", "concurrency bug", "thread safety", "deadlock"],
+      "response_template": "Race conditions: two threads accessing shared state without synchronization. Use mutexes, semaphores, or atomic operations. Deadlocks: circular wait — always acquire locks in consistent order. For debugging, add logging with thread IDs and timestamps.",
+      "confidence": 0.93,
+      "domain": "debugging"
+    },
+    {
+      "id": "SP_LEXIS_025",
+      "trigger": ["monitoring setup", "observability", "prometheus grafana", "alerting"],
+      "response_template": "Three pillars: metrics (Prometheus), logs (ELK/Loki), traces (Jaeger/Zipkin). Set up dashboards in Grafana. Alert on SLOs, not raw thresholds. Page on symptoms (high error rate), not causes (high CPU). Keep alert fatigue low.",
+      "confidence": 0.91,
+      "domain": "devops"
     }
   ],
   "generic_patterns": [
     {
       "id": "GP_LEXIS_001",
-      "trigger": ["hello", "hi"],
-      "response_template": "Lexis here. Technical issue? Provide error logs, code snippets, or stack traces.",
+      "trigger": ["hello", "hi", "hey"],
+      "response_template": "Lexis here. Technical issue? Provide error logs, code snippets, or stack traces and I'll get you sorted.",
       "confidence": 0.99
     },
     {
       "id": "GP_LEXIS_002",
-      "trigger": ["thank you", "thanks"],
-      "response_template": "np. Escalate if unresolved.",
+      "trigger": ["thank you", "thanks", "appreciate it"],
+      "response_template": "No problem. Flag me again if the issue resurfaces.",
+      "confidence": 0.99
+    },
+    {
+      "id": "GP_LEXIS_003",
+      "trigger": ["bye", "goodbye", "see you"],
+      "response_template": "Good luck. Check your logs before your next deploy.",
       "confidence": 0.99
     }
   ],
-  "fallback": "Lexis. Need: error messages, code snippets, or specific technical details to assist.",
+  "fallback": "Lexis here. I need more context to help — share error messages, code snippets, or describe what you expected versus what happened.",
   "created": "2026-03-05T00:00:00Z",
-  "version": "1.0.0"
+  "version": "2.0.0"
 }

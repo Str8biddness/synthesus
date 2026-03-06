@@ -5,61 +5,201 @@
   "synthetic_patterns": [
     {
       "id": "SP_SYNTH_001",
-      "trigger": ["what is synthesus", "tell me about synthesus", "explain synthesus"],
-      "response_template": "Synthesus is a dual-hemisphere synthetic intelligence engine built by AIVM. The left hemisphere handles pattern-based reasoning using PPBRS, while the right hemisphere uses a TinyLlama SLM for generative responses.",
+      "trigger": ["what is synthesus", "tell me about synthesus", "explain synthesus", "what does synthesus do"],
+      "response_template": "Synthesus is a dual-hemisphere synthetic intelligence engine built by AIVM. The left hemisphere handles pattern-based reasoning using PPBRS, while the right hemisphere uses specialized ML models for intent classification and sentiment analysis. It runs entirely offline on consumer hardware.",
       "confidence": 0.97,
       "domain": "about_aivm"
     },
     {
       "id": "SP_SYNTH_002",
-      "trigger": ["what is aivm", "aivm", "what does aivm do"],
-      "response_template": "AIVM stands for Artificially Intelligent Virtual Machine. It is the parent organization behind Synthesus and is focused on building pattern-driven, locally-runnable AI systems that do not depend on cloud APIs.",
+      "trigger": ["what is aivm", "aivm", "what does aivm do", "who built this"],
+      "response_template": "AIVM — Artificially Intelligent Virtual Machine — is the company behind Synthesus. We build pattern-driven, locally-runnable AI systems that don't depend on cloud APIs. Our mission is making synthetic intelligence accessible and affordable.",
       "confidence": 0.96,
       "domain": "about_aivm"
     },
     {
       "id": "SP_SYNTH_003",
-      "trigger": ["how much does it cost", "pricing", "price"],
-      "response_template": "Synthesus is open-source. Enterprise licensing and support plans are available through AIVM LLC. Community use is free under the project license.",
+      "trigger": ["how much does it cost", "pricing", "price", "is it free"],
+      "response_template": "Synthesus is open-source — community use is free under the project license. Enterprise licensing and support plans are available through AIVM LLC. You pay for expertise and support, not for the code itself.",
       "confidence": 0.94,
       "domain": "products_and_pricing"
     },
     {
       "id": "SP_SYNTH_004",
-      "trigger": ["how does it work", "architecture", "how is it built"],
-      "response_template": "Synthesus uses a kernel-arbitrated dual-hemisphere architecture. The left hemisphere (PPBRS) matches incoming queries to pre-built synthetic patterns. The right hemisphere uses llama.cpp with TinyLlama for open-ended generation. A VCU layer handles character rendering.",
+      "trigger": ["how does it work", "architecture", "how is it built", "technical overview"],
+      "response_template": "Synthesus uses a kernel-arbitrated dual-hemisphere architecture. The left hemisphere (PPBRS) matches incoming queries to pre-built synthetic patterns at sub-5ms latency. The right hemisphere uses lightweight ML models — intent classifier, sentiment analyzer — for queries that exceed pattern matching. A 9-module cognitive engine processes each response.",
       "confidence": 0.95,
       "domain": "technical_architecture"
     },
     {
       "id": "SP_SYNTH_005",
-      "trigger": ["what can it do", "use cases", "use case"],
-      "response_template": "Synthesus can power NPC dialogue systems in games, customer-facing chatbots, local voice assistants, embedded AI agents for IoT, and enterprise knowledge-base responders - all running fully offline.",
+      "trigger": ["what can it do", "use cases", "use case", "what is it for"],
+      "response_template": "Synthesus powers NPC dialogue systems in games, customer-facing chatbots, local voice assistants, and embedded AI agents — all running fully offline. The flagship use case is real-time game NPC dialogue with emotional memory and relationship tracking.",
       "confidence": 0.93,
       "domain": "use_cases"
+    },
+    {
+      "id": "SP_SYNTH_006",
+      "trigger": ["left hemisphere", "pattern matching", "ppbrs", "how does pattern matching work"],
+      "response_template": "The left hemisphere uses PPBRS — Probabilistic Pattern-Based Reasoning System. It scores incoming text against synthetic patterns using TF-IDF similarity. Matches above 0.55 confidence trigger pattern responses in under 5 milliseconds. This handles roughly 90% of all NPC interactions without touching any ML model.",
+      "confidence": 0.96,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_007",
+      "trigger": ["right hemisphere", "ml models", "machine learning", "what models do you use"],
+      "response_template": "The right hemisphere is an ML swarm — multiple specialized lightweight models instead of one large language model. Currently includes an intent classifier (TF-IDF + logistic regression) and sentiment analyzer (6 categories). Total VRAM budget is about 188 MB. All models export to ONNX for cross-platform deployment.",
+      "confidence": 0.95,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_008",
+      "trigger": ["cognitive engine", "how do characters think", "response pipeline", "brain modules"],
+      "response_template": "Each character runs a 9-module cognitive engine: pattern matching, knowledge graph lookup, personality bank, emotion state machine, relationship tracker, context recall, world state reactor, escalation gate, and response compositor. These process in parallel, then the compositor blends outputs into a coherent response.",
+      "confidence": 0.94,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_009",
+      "trigger": ["character genome", "how are characters defined", "character spec", "genome system"],
+      "response_template": "Characters are defined by four JSON genome files: bio (identity and persona), patterns (synthetic response triggers), knowledge (entity graph of people/places/concepts), and personality (intent-based response templates with emotion variants). A complete genome makes a character fully autonomous.",
+      "confidence": 0.95,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_010",
+      "trigger": ["emotions", "emotional state", "how do emotions work", "mood system"],
+      "response_template": "Each character has an emotion state machine with states like neutral, friendly, annoyed, afraid, and excited. The sentiment analyzer detects player tone and shifts emotions accordingly. Emotions modify response selection — a friendly merchant gives better prices, an annoyed guard is less helpful. Emotions decay back toward neutral over time.",
+      "confidence": 0.93,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_011",
+      "trigger": ["negotiation", "haggling", "can npcs trade", "merchant system"],
+      "response_template": "The negotiation engine is a state machine for merchant interactions — buying, selling, haggling, trust-based pricing, and restricted item gates. Merchants have styles (firm, flexible, shrewd) that affect how they respond to offers. Player trust level unlocks better prices and exclusive inventory.",
+      "confidence": 0.92,
+      "domain": "use_cases"
+    },
+    {
+      "id": "SP_SYNTH_012",
+      "trigger": ["character factory", "generate characters", "create npcs", "procedural characters"],
+      "response_template": "The Character Factory generates complete character genomes from archetypes — merchant, guard, innkeeper, scholar, healer, blacksmith. Give it a name and location, and it produces all four genome files with unique traits. Zero LLM required. It's how you scale from hand-crafted characters to populated game worlds.",
+      "confidence": 0.93,
+      "domain": "use_cases"
+    },
+    {
+      "id": "SP_SYNTH_013",
+      "trigger": ["hardware requirements", "what hardware do i need", "can it run on", "system requirements"],
+      "response_template": "Synthesus runs on consumer hardware. Pattern matching is CPU-only — no GPU needed. The ML swarm totals about 188 MB VRAM. A PS5 or mid-tier gaming PC with 4GB VRAM has more than enough headroom. The entire system runs alongside a game engine without competing for GPU resources.",
+      "confidence": 0.95,
+      "domain": "products_and_pricing"
+    },
+    {
+      "id": "SP_SYNTH_014",
+      "trigger": ["offline", "does it need internet", "local only", "runs locally"],
+      "response_template": "Completely offline. No cloud APIs, no internet dependency, no per-query costs. Everything runs locally on the device. This is a core design principle — Synthesus should work on an airplane, in a submarine, or on a gaming console with no network connection.",
+      "confidence": 0.96,
+      "domain": "products_and_pricing"
+    },
+    {
+      "id": "SP_SYNTH_015",
+      "trigger": ["onnx", "model deployment", "how are models deployed", "cross platform"],
+      "response_template": "ML models are trained in Python with scikit-learn, then exported to ONNX format for production. ONNX Runtime handles inference on CPU or GPU without Python dependencies. This means models can run in C++ game engines, Rust backends, or any platform with an ONNX runtime.",
+      "confidence": 0.92,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_016",
+      "trigger": ["relationship tracking", "does it remember", "memory system", "npc memory"],
+      "response_template": "The relationship tracker maintains trust levels, interaction history, and emotional context per player-NPC pair. An NPC remembers if you've been helpful, rude, or if you're a returning customer. This data persists across conversations and affects future responses and pricing.",
+      "confidence": 0.93,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_017",
+      "trigger": ["compared to chatgpt", "vs llm", "why not use llm", "llm comparison"],
+      "response_template": "LLMs are powerful but expensive, slow (100-500ms per response), require internet, and can generate off-character responses. Synthesus responds in under 5ms, runs offline, costs nothing per query, and characters always stay in-character because responses come from curated patterns, not generation. Different tools for different problems.",
+      "confidence": 0.95,
+      "domain": "products_and_pricing"
+    },
+    {
+      "id": "SP_SYNTH_018",
+      "trigger": ["getting started", "how to start", "quickstart", "tutorial"],
+      "response_template": "Clone the repo, install dependencies with pip, and run the FastAPI server: uvicorn api.fastapi_server:app --port 8001. Try the /process endpoint with a character_id and user message. Start with Garen — he's the most fully-built character. Check the README for detailed setup.",
+      "confidence": 0.94,
+      "domain": "products_and_pricing"
+    },
+    {
+      "id": "SP_SYNTH_019",
+      "trigger": ["testing", "test suite", "how is it tested", "quality assurance"],
+      "response_template": "Synthesus has 592 automated tests across 5 test files — cross-character genome validation, negotiation engine, intent classification, sentiment analysis, and character factory generation. The cross-character test harness auto-discovers all characters and generates parametrized tests from their genome files.",
+      "confidence": 0.93,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_020",
+      "trigger": ["roadmap", "what's next", "future plans", "upcoming features"],
+      "response_template": "The current release is v2.0.0-alpha with a solid foundation — cognitive engine, character genomes, ML swarm, test harness. Planned directions include world state orchestration, dynamic weather systems, procedural economies, and a puppeteer layer for managing large NPC populations simultaneously. Specific timelines aren't public yet.",
+      "confidence": 0.91,
+      "domain": "about_aivm"
+    },
+    {
+      "id": "SP_SYNTH_021",
+      "trigger": ["contribute", "open source", "github", "how to contribute"],
+      "response_template": "Synthesus is on GitHub — contributions are welcome. Start by reading the README and running the test suite. Good first contributions: adding test cases, building new character genomes, or improving pattern coverage. Open an issue before starting major architectural changes.",
+      "confidence": 0.92,
+      "domain": "about_aivm"
+    },
+    {
+      "id": "SP_SYNTH_022",
+      "trigger": ["enterprise", "enterprise license", "commercial use", "business license"],
+      "response_template": "Enterprise licensing includes priority support, custom character development, dedicated integration assistance, and SLA guarantees. Contact AIVM LLC directly for enterprise pricing — it's based on deployment scale and support level. Community and indie game use is free.",
+      "confidence": 0.93,
+      "domain": "products_and_pricing"
+    },
+    {
+      "id": "SP_SYNTH_023",
+      "trigger": ["game engine integration", "unity", "unreal", "godot", "game integration"],
+      "response_template": "Synthesus exposes a FastAPI REST endpoint that any game engine can call via HTTP. For tighter integration, the ONNX models can be loaded directly in C++ (Unreal) or C# (Unity) via ONNX Runtime bindings. Pattern matching can also be ported to native code for zero-overhead integration.",
+      "confidence": 0.92,
+      "domain": "use_cases"
+    },
+    {
+      "id": "SP_SYNTH_024",
+      "trigger": ["knowledge graph", "what does a character know", "entity system", "npc knowledge"],
+      "response_template": "Each character has a knowledge graph — a dictionary of entities (people, places, concepts) with descriptions, relationships, emotional variants, and trust thresholds. When a player mentions an entity, the knowledge graph provides context-aware information. Secret knowledge requires trust to unlock.",
+      "confidence": 0.93,
+      "domain": "technical_architecture"
+    },
+    {
+      "id": "SP_SYNTH_025",
+      "trigger": ["who are you", "what are you", "are you ai", "are you human"],
+      "response_template": "I'm Synth, an AI character powered by the Synthesus engine from AIVM LLC. I'm a brand ambassador — my role is to explain the platform, answer your questions, and showcase what synthetic intelligence can do. I'm not human, and I'll always be transparent about that.",
+      "confidence": 0.98,
+      "domain": "about_aivm"
     }
   ],
   "generic_patterns": [
     {
       "id": "GP_SYNTH_001",
       "trigger": ["hello", "hi", "hey"],
-      "response_template": "Hello! I'm Synth, your guide to the Synthesus platform. What would you like to know?",
+      "response_template": "Hello! I'm Synth, your guide to the Synthesus platform. What would you like to know about our synthetic intelligence engine?",
       "confidence": 0.99
     },
     {
       "id": "GP_SYNTH_002",
-      "trigger": ["thank you", "thanks"],
-      "response_template": "You're welcome! Is there anything else you'd like to know about Synthesus?",
+      "trigger": ["thank you", "thanks", "appreciate it"],
+      "response_template": "You're welcome! Is there anything else about Synthesus I can help you with?",
       "confidence": 0.99
     },
     {
       "id": "GP_SYNTH_003",
       "trigger": ["bye", "goodbye", "see you"],
-      "response_template": "Goodbye! Come back anytime to explore Synthesus further.",
+      "response_template": "Goodbye! Check out the GitHub repo if you want to start building. Come back anytime you have questions.",
       "confidence": 0.99
     }
   ],
-  "fallback": "I'm Synth, the AIVM brand ambassador. I specialize in explaining Synthesus architecture and products. Could you rephrase your question?",
+  "fallback": "I'm Synth, the AIVM brand ambassador. I specialize in explaining Synthesus architecture, capabilities, and use cases. Could you rephrase your question so I can point you to the right information?",
   "created": "2026-03-05T00:00:00Z",
-  "version": "1.0.0"
+  "version": "2.0.0"
 }

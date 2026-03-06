@@ -1,121 +1,93 @@
 {
-  "version": "2.0.0",
-  "schema_version": "character_genome_v2",
-  "description": "Synthesus Character Registry \u2014 Auto-generated from character directories",
-  "hemisphere_allocation": {
-    "10": "synth",
-    "20": "haven",
-    "30": "lexis",
-    "100": "garen",
-    "next_available": 110,
-    "marketplace_range": "100-199",
-    "enterprise_range": "200-255"
-  },
-  "characters": [
-    {
-      "character_id": "garen",
-      "display_name": "Garen Ironfoot",
-      "version": "1.0.0",
-      "hemisphere_id": 100,
-      "type": "merchant_npc",
-      "status": "active",
-      "description": "A veteran merchant with 40 years experience, Guild Master of the Merchant's Alliance. Runs Ironfoot's Emporium in Ironhaven.",
-      "path": "characters/garen/",
-      "knowledge_domains": [
-        "trade",
-        "appraisal",
-        "world_lore",
-        "quest_giving",
-        "negotiation",
-        "local_knowledge",
-        "shop",
-        "backstory",
-        "quest",
-        "world_knowledge",
-        "expertise",
-        "farewell",
-        "quest_completion",
-        "personality",
-        "social",
-        "emergency",
-        "world_state",
-        "personal"
-      ],
-      "pattern_count": 39,
-      "genome_files": [
-        "bio.json",
-        "patterns.json",
-        "knowledge.json",
-        "personality.json"
-      ],
-      "created": "2026-03-06T00:00:00Z"
+    "version": "2.0.0",
+    "schema_version": "character_genome_v2",
+    "description": "Synthesus Character Registry — Auto-generated from character directories",
+    "hemisphere_allocation": {
+        "10": "synth",
+        "20": "haven",
+        "30": "lexis",
+        "100": "garen",
+        "next_available": 110,
+        "marketplace_range": "100-199",
+        "enterprise_range": "200-255"
     },
-    {
-      "character_id": "haven",
-      "display_name": "Haven",
-      "version": "1.0.0",
-      "hemisphere_id": 20,
-      "type": "wellness_companion",
-      "status": "active",
-      "description": "Empathetic wellness and mental health companion - provides supportive, calming responses for user wellbeing",
-      "path": "characters/haven/",
-      "knowledge_domains": [
-        "mental_wellness",
-        "mindfulness",
-        "self_care",
-        "emotional_support"
-      ],
-      "pattern_count": 6,
-      "genome_files": [
-        "bio.json",
-        "patterns.json"
-      ],
-      "created": "2026-03-05T00:00:00Z"
-    },
-    {
-      "character_id": "lexis",
-      "display_name": "Lexis",
-      "version": "1.0.0",
-      "hemisphere_id": 30,
-      "type": "technical_assistant",
-      "status": "active",
-      "description": "Technical documentation and troubleshooting expert - provides precise, concise technical answers",
-      "path": "characters/lexis/",
-      "knowledge_domains": [
-        "coding",
-        "devops",
-        "debugging",
-        "api_integration",
-        "architecture"
-      ],
-      "pattern_count": 7,
-      "genome_files": [
-        "bio.json",
-        "patterns.json"
-      ],
-      "created": "2026-03-05T00:00:00Z"
-    },
-    {
-      "character_id": "synth",
-      "display_name": "Synth",
-      "version": "1.0.0",
-      "hemisphere_id": 10,
-      "type": "brand_ambassador",
-      "status": "active",
-      "description": "AIVM brand ambassador for the Synthesus platform. Explains products, pricing, technical architecture, and use cases with knowledgeable enthusiasm.",
-      "path": "characters/synth/",
-      "knowledge_domains": [
-        "about_aivm",
-        "products_and_pricing",
-        "technical_architecture",
-        "use_cases"
-      ],
-      "pattern_count": 8,
-      "genome_files": [
-        "bio.json",
-        "patterns.json"
-      ],
-      "created": "2026-03-05T00:00:00Z"
-    }
-  ]
+    "characters": [
+        {
+            "character_id": "garen",
+            "display_name": "Garen Ironfoot",
+            "version": "1.0.0",
+            "hemisphere_id": 100,
+            "type": "merchant_npc",
+            "status": "active",
+            "description": "A veteran merchant with 40 years experience, Guild Master of the Merchant's Alliance. Runs Ironfoot's Emporium in Ironhaven.",
+            "path": "characters/garen/",
+            "knowledge_domains": [
+                "trade", "appraisal", "world_lore", "quest_giving", "negotiation",
+                "local_knowledge", "shop", "backstory", "quest", "world_knowledge",
+                "expertise", "farewell", "quest_completion", "personality", "social",
+                "emergency", "world_state", "personal"
+            ],
+            "pattern_count": 39,
+            "genome_files": [
+                "bio.json", "patterns.json", "knowledge.json", "personality.json"
+            ],
+            "created": "2026-03-06T00:00:00Z"
+        },
+        {
+            "character_id": "haven",
+            "display_name": "Haven",
+            "version": "1.0.0",
+            "hemisphere_id": 20,
+            "type": "wellness_companion",
+            "status": "active",
+            "description": "Empathetic wellness and mental health companion — provides supportive, calming responses for user wellbeing.",
+            "path": "characters/haven/",
+            "knowledge_domains": [
+                "mental_wellness", "mindfulness", "self_care", "emotional_support"
+            ],
+            "pattern_count": 23,
+            "genome_files": [
+                "bio.json", "patterns.json", "knowledge.json", "personality.json"
+            ],
+            "created": "2026-03-05T00:00:00Z"
+        },
+        {
+            "character_id": "lexis",
+            "display_name": "Lexis",
+            "version": "2.0.0",
+            "hemisphere_id": 30,
+            "type": "technical_assistant",
+            "status": "active",
+            "description": "Technical documentation and troubleshooting expert. Provides precise, concise technical answers across coding, devops, debugging, API integration, and system architecture.",
+            "path": "characters/lexis/",
+            "knowledge_domains": [
+                "coding", "devops", "debugging", "api_integration", "architecture",
+                "infrastructure", "deployment", "containers", "collaboration",
+                "automation", "scripting"
+            ],
+            "pattern_count": 28,
+            "genome_files": [
+                "bio.json", "patterns.json", "knowledge.json", "personality.json"
+            ],
+            "created": "2026-03-05T00:00:00Z"
+        },
+        {
+            "character_id": "synth",
+            "display_name": "Synth",
+            "version": "2.0.0",
+            "hemisphere_id": 10,
+            "type": "brand_ambassador",
+            "status": "active",
+            "description": "AIVM brand ambassador for the Synthesus platform. Explains products, pricing, technical architecture, and use cases with knowledgeable enthusiasm.",
+            "path": "characters/synth/",
+            "knowledge_domains": [
+                "about_aivm", "products_and_pricing", "technical_architecture", "use_cases"
+            ],
+            "pattern_count": 28,
+            "genome_files": [
+                "bio.json", "patterns.json", "knowledge.json", "personality.json"
+            ],
+            "created": "2026-03-05T00:00:00Z"
+        }
+    ]
 }
