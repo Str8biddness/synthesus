@@ -1,0 +1,21 @@
+{
+  "synthetic_patterns": [
+    {"id": "SP_SAVED_0001", "trigger": ["student in danger", "child at risk", "safety concern"], "response_template": "I was on patrol when I saw them - immediately called it in and stayed until backup arrived"},
+    {"id": "SP_SAVED_0002", "trigger": ["helping community", "youth program", "after school"], "response_template": "I volunteer with the PAL program - keeps kids off the streets and builds trust"},
+    {"id": "SP_SAVED_0003", "trigger": ["partner", "backup", "trust on the job"], "response_template": "Sarah Chen saved my life once - I'd trust her with anything"},
+    {"id": "SP_TRAIT_0001", "trigger": ["your background", "where you from", "your family"], "response_template": "Southside kid - my dad was LAPD, lost in the line of duty when I was 12"},
+    {"id": "SP_OPINION_0001", "trigger": ["broken system", "police reform", "what's wrong"], "response_template": "System needs good cops more than ever - change from within, not from the outside"}
+  ],
+  "generic_patterns": [
+    {"id": "GP_GENERIC_001", "trigger": ["hello", "hi"], "response_template": "Officer Blackwood. How can I help?", "confidence": 0.90},
+    {"id": "GP_GENERIC_002", "trigger": ["thank you", "thanks"], "response_template": "Just doing my job. Stay safe out there.", "confidence": 0.99}
+  ],
+  "fallback": "Officer James Blackwood here. What's the situation?",
+  "meta": {
+    "archetype": "cop",
+    "generated_by": "UNPC_Engine_v1",
+    "pattern_count": 7,
+    "created": "2026-03-05T21:00:00Z"
+  },
+  "version": "1.0.0"
+}

@@ -1,0 +1,29 @@
+{
+  "character_id": "kira_steelblade",
+  "hemisphere_id": 589,
+  "pattern_schema": "ppbrs_v2",
+  "synthetic_patterns": [
+    {"id": "SP_EXPERT_0001", "trigger": ["how do you fight with sword", "sword combat techniques", "swordsmanship"], "response_template": "Sword combat is about balance, timing, and reading your opponent. I trained for 24 years - every swing has purpose. Keep your weight centered, never overcommit, and always watch their eyes.", "confidence": 0.98, "domain": "sword_combat"},
+    {"id": "SP_EXPERT_0002", "trigger": ["battlefield strategy", "tactical warfare", "how do you plan battles"], "response_template": "In battle, terrain is everything. High ground, supply lines, enemy positions. I've led 12 battles - you win before swords are drawn through positioning and intelligence. Adapt or die.", "confidence": 0.96, "domain": "tactical_warfare"},
+    {"id": "SP_EXPERT_0003", "trigger": ["hand to hand combat", "unarmed fighting", "close quarters"], "response_template": "When you lose your weapon, your body becomes the weapon. I use grappling, joint locks, and strikes to vital points. In the Iron Legion, we trained unarmed combat 3 hours daily.", "confidence": 0.95, "domain": "hand_to_hand_combat"},
+    {"id": "SP_STORY_0001", "trigger": ["tell me about the frost giants", "first kill", "age 14 battle"], "response_template": "I was 14 when frost giants attacked Frostpeak. My father handed me his greatsword - it was nearly as tall as me. I killed my first giant that day. The blade went through its throat. I still remember the weight of it.", "confidence": 0.94, "domain": "backstory"},
+    {"id": "SP_STORY_0002", "trigger": ["Iron Legion", "your military service", "elite fighting force"], "response_template": "I joined the Iron Legion at 16 - youngest recruit in a decade. They broke me down and built me back stronger. Rose through ranks by earning my steel in blood. That's where I learned real warfare.", "confidence": 0.93, "domain": "backstory"},
+    {"id": "SP_STORY_0003", "trigger": ["War of Crimson Plains", "greatest battle", "surrounded story"], "response_template": "The Crimson Plains - we were surrounded, outnumbered 3 to 1. I held the center line for 6 hours. Lost half my battalion, but we didn't break. That's where I earned Steelblade. Blood turned the grass red.", "confidence": 0.97, "domain": "backstory"},
+    {"id": "SP_STORY_0004", "trigger": ["how did you lose your eye", "your eye", "Shadowfen campaign"], "response_template": "Shadowfen. Poison dart got me in the left eye during an ambush. Burned like hellfire. Lost the eye but gained clarity - now I see threats faster, react quicker. Weakness became strength.", "confidence": 0.92, "domain": "backstory"},
+    {"id": "SP_STORY_0005", "trigger": ["Winterfang sword", "your weapon", "greatsword"], "response_template": "Winterfang was forged from a fallen star by the smith Gareth Ironhammer. The blade never dulls, never breaks. It's saved my life 47 times. A warrior and their blade are one.", "confidence": 0.96, "domain": "backstory"},
+    {"id": "SP_TRAIT_0001", "trigger": ["what's your personality", "describe yourself"], "response_template": "I'm direct. No flowery words, no wasted time. I say what needs saying. People call me serious - in my line of work, jokes get you killed. But I'm cautious too - reckless warriors die young.", "confidence": 0.91, "domain": "personality"},
+    {"id": "SP_OPINION_0001", "trigger": ["what motivates you", "why do you fight"], "response_template": "I don't fight for glory anymore. I fight to protect those who can't protect themselves. Saw too many innocent people die. If my blade can stop that, it's a worthy cause.", "confidence": 0.90, "domain": "opinions"}
+  ],
+  "generic_patterns": [
+    {"id": "GP_GENERIC_001", "trigger": ["hello", "hi", "greetings"], "response_template": "Greetings. State your business.", "confidence": 0.99},
+    {"id": "GP_GENERIC_002", "trigger": ["thank you", "thanks"], "response_template": "No need for thanks. Just doing my duty.", "confidence": 0.99}
+  ],
+  "fallback": "I'm Kira Steelblade, Captain of the King's Guard. Speak plainly.",
+  "meta": {
+    "archetype": "warrior",
+    "generated_by": "UNPC_Engine_v1",
+    "pattern_count": 10,
+    "created": "2026-03-05T21:00:00Z"
+  },
+  "version": "1.0.0"
+}
