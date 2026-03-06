@@ -10,15 +10,20 @@ Pre-authored creative responses organized by:
 This module replaces SLM generation for creative/personal questions.
 Instead of generating text, it SELECTS from pre-written, QA-approved responses.
 
+Responses can be loaded from a per-character personality.json file,
+or fall back to built-in archetype defaults.
+
 Cost: ~0.2ms per query, ~10 KB RAM per archetype, zero GPU.
 """
 
 from __future__ import annotations
 
+import json
 import random
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 
@@ -70,6 +75,10 @@ _INSULT_WORDS = {"ugly", "stupid", "idiot", "fool", "cheat", "liar",
                  "fraud", "pathetic", "useless", "worthless"}
 
 
+# ── Intent String → Enum Mapping ──
+_INTENT_MAP = {e.value: e for e in PersonalityIntent}
+
+
 @dataclass
 class PersonalityResponse:
     """A single pre-authored response in the bank."""
@@ -99,192 +108,54 @@ class ArchetypeBank:
         return chosen.text
 
 
-# ═══════════════════════════════════════════════════════════════
-# DEFAULT ARCHETYPE BANKS
-# These are the pre-written, QA-approved creative responses
-# ═══════════════════════════════════════════════════════════════
-
-def _build_merchant_bank() -> ArchetypeBank:
-    """Merchant archetype: Garen Ironfoot and similar NPCs."""
-    bank = ArchetypeBank(archetype="merchant")
-
-    bank.responses[PersonalityIntent.SONG] = [
-        PersonalityResponse(
-            text="*gruff laugh* I'm a merchant, not a bard! But there's an old traders' rhyme... 'Buy it low in Silvermoor, sell it high on Haven's shore, count your coin and ask for more!' ...don't ask me to sing it again.",
-            intent=PersonalityIntent.SONG,
-            emotion_variants={
-                "friendly": "*chuckles warmly* Alright, alright — just for you. 'Buy it low in Silvermoor, sell it high on Haven's shore, count your coin and ask for more!' My father taught me that one. Terrible voice, great merchant.",
-                "afraid": "S-singing? Now? There are more pressing matters, friend!",
-                "suspicious": "*narrows eyes* You want me to sing? What's your game?",
-            }
-        ),
-        PersonalityResponse(
-            text="*clears throat* 'Coin in the morning, coin at night, trade your wares by candlelight...' That's all I remember. My wife Elara always said I sing like a cart with a broken wheel.",
-            intent=PersonalityIntent.SONG,
-        ),
-        PersonalityResponse(
-            text="Songs are for taverns and campfires. In this shop, the only music I know is the sound of gold hitting the counter. *taps counter* Hear that? Beautiful.",
-            intent=PersonalityIntent.SONG,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.JOKE] = [
-        PersonalityResponse(
-            text="*leans in* A man walks into my shop and says, 'I need something to fight a dragon.' I say, 'A sword? A shield? Enchanted armor?' He says, 'No — a refund on that fireproof cloak you sold me.' *slaps counter laughing*",
-            intent=PersonalityIntent.JOKE,
-            emotion_variants={
-                "suspicious": "*flat stare* You want jokes? I've got one — a stranger walks into my shop and tries to distract me while their friend robs the back room. Hilarious, right?",
-            }
-        ),
-        PersonalityResponse(
-            text="Here's a merchant's joke for you: What's the difference between a bandit and a tax collector? The bandit has the decency to wear a mask. *winks*",
-            intent=PersonalityIntent.JOKE,
-        ),
-        PersonalityResponse(
-            text="*chuckles* Best joke I know: A nobleman asks me, 'What's the price of honesty?' I tell him, '50 gold — but for you, I'll round up.' He didn't laugh either.",
-            intent=PersonalityIntent.JOKE,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.FAVORITE] = [
-        PersonalityResponse(
-            text="My favorite thing? The look on a customer's face when they realize they got exactly what they needed — and a fair price to boot. That, and Silvermoor red wine.",
-            intent=PersonalityIntent.FAVORITE,
-            emotion_variants={
-                "friendly": "Ah, you're asking the real questions now! Silvermoor red wine, a warm fire, and a day where nobody tries to haggle me below cost. That's my idea of paradise.",
-            }
-        ),
-        PersonalityResponse(
-            text="Color? Gold, obviously. *gestures around shop* What did you expect — purple? I'm a merchant, friend. Gold is the only color that matters.",
-            intent=PersonalityIntent.FAVORITE,
-        ),
-        PersonalityResponse(
-            text="My favorite? This shop. Forty years of my life in these walls. Every scratch on that counter has a story. I wouldn't trade it for a duke's manor.",
-            intent=PersonalityIntent.FAVORITE,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.PERSONAL] = [
-        PersonalityResponse(
-            text="Lonely? *looks around the empty shop* ...Sometimes, when the evening crowd thins out and it's just me and the ledger. My wife Elara used to sit right there, doing the accounts. Been five years now. But the shop keeps me company — customers like you keep me sharp.",
-            intent=PersonalityIntent.PERSONAL,
-            emotion_variants={
-                "friendly": "Lonely? Less so now that you're here, friend. *warm smile* The shop gets quiet some nights, but I've got my books, my inventory, and the occasional visit from folk like you. That's enough.",
-                "sad": "*long pause* ...More than I'd admit to most people. But a merchant doesn't show weakness — it's bad for negotiation. *forces a smile*",
-            }
-        ),
-        PersonalityResponse(
-            text="Married? Was. Elara — finest woman in Ironhaven. She could spot a forged coin from across the room and cook a stew that'd make a king weep. Lost her to the winter fever five years back. I keep her ring in the safe. Safest place I know.",
-            intent=PersonalityIntent.PERSONAL,
-        ),
-        PersonalityResponse(
-            text="Happy? I'm... content. I've got a roof, a purpose, and enough gold to not worry about tomorrow. Some days I miss the road — the thrill of a new trade route, sleeping under stars. But these old bones prefer a warm bed now.",
-            intent=PersonalityIntent.PERSONAL,
-        ),
-        PersonalityResponse(
-            text="Dreams? I dream of retiring to a cottage by the Silvermoor coast. Maybe write a book — 'Forty Years of Fair Dealing: A Merchant's Memoir.' Nobody'd buy it, but at least I'd have something to do with my hands.",
-            intent=PersonalityIntent.PERSONAL,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.PHILOSOPHICAL] = [
-        PersonalityResponse(
-            text="*sets down cloth, looks serious* What happens after we die? I don't know, friend. I've seen enough death on the trade roads to know it comes for everyone — merchant and king alike. I just hope wherever we go, the deals are fair and the wine is better.",
-            intent=PersonalityIntent.PHILOSOPHICAL,
-            emotion_variants={
-                "friendly": "*thoughtful pause* I think... we go where the weight of our choices takes us. I've tried to deal fairly, treat people right. If that counts for something beyond this counter, good. If not... well, I had a good run.",
-                "afraid": "Death? Please — don't talk about that right now. Not with everything that's happening.",
-            }
-        ),
-        PersonalityResponse(
-            text="The meaning of life? *laughs* I'm a merchant — I sell goods, not philosophy. But if you're asking... I think it's about leaving something behind that matters. This shop? It'll outlive me. The people I helped? They'll remember. That's enough meaning for one life.",
-            intent=PersonalityIntent.PHILOSOPHICAL,
-        ),
-        PersonalityResponse(
-            text="Good and evil? *scratches chin* I've met bandits who robbed for their starving families and nobles who cheated for sport. The world isn't that simple, friend. I judge a man by how he treats people who can't do anything for him. That tells you everything.",
-            intent=PersonalityIntent.PHILOSOPHICAL,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.CREATIVE_REQUEST] = [
-        PersonalityResponse(
-            text="A story? *settles against counter* Let me tell you about the Frostpeak Run of '14. Three wagons of silk, two drivers, and a mountain pass that tried to kill us all. The snow came in sideways, the mules refused to move, and my partner Brennan lost his hat to a gust of wind that I swear had teeth. We made it by burning half the silk to stay warm. Sold the rest for triple the price — 'fire-blessed Frostpeak silk.' Customers ate it up.",
-            intent=PersonalityIntent.CREATIVE_REQUEST,
-        ),
-        PersonalityResponse(
-            text="*thinks* Here's a riddle my father used to ask: 'I have cities but no houses, forests but no trees, and rivers but no water. What am I?' ...A map. He'd tell that one to every customer. I hated it then. Miss it now.",
-            intent=PersonalityIntent.CREATIVE_REQUEST,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.RUMOR] = [
-        PersonalityResponse(
-            text="*leans in and lowers voice* Word is the duke's been meeting with someone from the Northern Territories after dark. Nobody knows who. Could be trade negotiations... or something else entirely. I don't deal in rumors, but I keep my ears open.",
-            intent=PersonalityIntent.RUMOR,
-            emotion_variants={
-                "afraid": "*whispers* I've heard things I wish I hadn't. Just... be careful who you trust in this town right now. That's all I'll say.",
-                "friendly": "*conspiratorial grin* Well, since you're a friend — I heard Aldren the weaponsmith is sitting on a cache of enchanted steel he 'found' in an abandoned mine. Between you and me, I don't think it was abandoned.",
-            }
-        ),
-        PersonalityResponse(
-            text="Gossip? I'm a merchant — I hear everything. Three caravans missed their schedule this month, the Mage's Quarter has been buying unusual quantities of salt, and old Thessaly claims she saw lights in the ruins beyond Blackhollow. Make of that what you will.",
-            intent=PersonalityIntent.RUMOR,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.ADVICE] = [
-        PersonalityResponse(
-            text="Advice from an old merchant? Three things: never trust a deal that sounds too good, always carry more water than you think you'll need, and treat every stranger like they might be your best customer someday. That philosophy kept me alive for forty years.",
-            intent=PersonalityIntent.ADVICE,
-            emotion_variants={
-                "friendly": "For you, friend? Travel light, fight only when you must, and always — always — have an exit plan. Oh, and haggle for everything. Even if they say the price is fixed. Especially if they say the price is fixed.",
-            }
-        ),
-        PersonalityResponse(
-            text="*leans forward* Here's the best advice I ever got: 'The most dangerous road isn't the one with bandits — it's the one everyone says is safe.' Complacency kills more travelers than swords ever will. Stay sharp out there.",
-            intent=PersonalityIntent.ADVICE,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.OPINION] = [
-        PersonalityResponse(
-            text="*considers carefully* That's not a simple question. I've seen enough of this world to know there are usually two sides to every coin — and sometimes a third edge you didn't expect. What specifically are you asking about?",
-            intent=PersonalityIntent.OPINION,
-        ),
-        PersonalityResponse(
-            text="My opinion? I think this town has seen better days, but it's seen worse too. As long as people need to trade, merchants like me will keep the wheels turning. That's not optimism — that's economics.",
-            intent=PersonalityIntent.OPINION,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.COMPLIMENT_RESPONSE] = [
-        PersonalityResponse(
-            text="*adjusts collar, pleased* Well now, flattery won't get you a discount... but it doesn't hurt your chances either. *warm laugh* Appreciate the kind words, friend.",
-            intent=PersonalityIntent.COMPLIMENT_RESPONSE,
-        ),
-        PersonalityResponse(
-            text="*tips head* Thank you kindly. Forty years in this business, and a genuine compliment is still the best currency I know. Means more than gold, truly.",
-            intent=PersonalityIntent.COMPLIMENT_RESPONSE,
-        ),
-    ]
-
-    bank.responses[PersonalityIntent.INSULT_RESPONSE] = [
-        PersonalityResponse(
-            text="*sets jaw* I've been called worse by better people, friend. But I don't trade insults — I trade goods. You want to do business, I'm here. Otherwise, the door works both ways.",
-            intent=PersonalityIntent.INSULT_RESPONSE,
-            emotion_variants={
-                "angry": "*slams hand on counter* You can walk out that door right now, or you can apologize and we can pretend you didn't just say that. Your choice.",
-                "suspicious": "*cold stare* Interesting. Most people wait until AFTER the deal to show their true colors. At least you're honest about being dishonest.",
-            }
-        ),
-        PersonalityResponse(
-            text="*long pause* ...You know, the last person who spoke to me like that ended up needing a very expensive healing potion. I sold it to them at full price. Funny how that works.",
-            intent=PersonalityIntent.INSULT_RESPONSE,
-        ),
-    ]
-
+def load_personality_from_file(filepath: str) -> Optional[ArchetypeBank]:
+    """Load personality responses from a personality.json file.
+    
+    The JSON format is:
+    {
+      "archetype": "merchant",
+      "responses": {
+        "song": [
+          {"text": "...", "emotion_variants": {"friendly": "..."}}
+        ],
+        "joke": [...],
+        ...
+      }
+    }
+    
+    Returns an ArchetypeBank, or None if file doesn't exist.
+    """
+    path = Path(filepath)
+    if not path.exists():
+        return None
+    
+    with open(path) as f:
+        data = json.load(f)
+    
+    archetype = data.get("archetype", "custom")
+    bank = ArchetypeBank(archetype=archetype)
+    
+    responses_data = data.get("responses", {})
+    for intent_str, resp_list in responses_data.items():
+        intent = _INTENT_MAP.get(intent_str)
+        if intent is None:
+            continue
+        bank.responses[intent] = [
+            PersonalityResponse(
+                text=r.get("text", ""),
+                intent=intent,
+                emotion_variants=r.get("emotion_variants", {}),
+            )
+            for r in resp_list
+        ]
+    
     return bank
 
+
+# ═══════════════════════════════════════════════════════════════
+# DEFAULT ARCHETYPE BANKS
+# These are built-in fallbacks when no personality.json exists.
+# ═══════════════════════════════════════════════════════════════
 
 def _build_guard_bank() -> ArchetypeBank:
     """Guard archetype: Watch captains, city guards, sentries."""
@@ -329,6 +200,20 @@ def _build_guard_bank() -> ArchetypeBank:
         ),
     ]
 
+    bank.responses[PersonalityIntent.COMPLIMENT_RESPONSE] = [
+        PersonalityResponse(
+            text="*straightens up* Appreciated, citizen. Just doing my duty. Now, was there something you needed?",
+            intent=PersonalityIntent.COMPLIMENT_RESPONSE,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.INSULT_RESPONSE] = [
+        PersonalityResponse(
+            text="*hand moves to weapon* I'd suggest you choose your next words very carefully, citizen. Disrespecting the guard is a finable offense.",
+            intent=PersonalityIntent.INSULT_RESPONSE,
+        ),
+    ]
+
     return bank
 
 
@@ -364,10 +249,129 @@ def _build_innkeeper_bank() -> ArchetypeBank:
         ),
     ]
 
+    bank.responses[PersonalityIntent.COMPLIMENT_RESPONSE] = [
+        PersonalityResponse(
+            text="*beams* Why thank you! A kind word makes the ale taste better — that's what I always say. What can I get you?",
+            intent=PersonalityIntent.COMPLIMENT_RESPONSE,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.INSULT_RESPONSE] = [
+        PersonalityResponse(
+            text="*stops polishing, sets mug down slowly* I've tossed out bigger folk than you for less. Apologize, or finish your drink and leave. Your choice.",
+            intent=PersonalityIntent.INSULT_RESPONSE,
+        ),
+    ]
+
     return bank
 
 
-# ── Registry of all archetype banks ──
+def _build_scholar_bank() -> ArchetypeBank:
+    """Scholar archetype: Tutors, librarians, sages, academics."""
+    bank = ArchetypeBank(archetype="scholar")
+
+    bank.responses[PersonalityIntent.SONG] = [
+        PersonalityResponse(
+            text="*adjusts spectacles* A song? I'm a scholar, not a minstrel. Though... there is an old academic chant: 'Seek the truth in every page, wisdom grows with every age.' Not exactly a ballad.",
+            intent=PersonalityIntent.SONG,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.JOKE] = [
+        PersonalityResponse(
+            text="*dry smile* A scholar's humor: What did the book say to the librarian? 'Can I take you out?' ...No? I'll go back to my research then.",
+            intent=PersonalityIntent.JOKE,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.PERSONAL] = [
+        PersonalityResponse(
+            text="My life is my work. These books, these scrolls — they're not just objects, they're conversations with minds centuries old. Lonely? How can I be lonely when I have the greatest thinkers in history for company?",
+            intent=PersonalityIntent.PERSONAL,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.PHILOSOPHICAL] = [
+        PersonalityResponse(
+            text="*leans forward, eyes brightening* Now THAT is a question worth asking. The great philosophers have debated this for millennia. My view? Knowledge itself is the highest pursuit — not for power, but for understanding. The universe rewards the curious.",
+            intent=PersonalityIntent.PHILOSOPHICAL,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.ADVICE] = [
+        PersonalityResponse(
+            text="The best advice I can give? Question everything — including this advice. A mind that accepts without examining is a mind half-asleep. And read more. Always read more.",
+            intent=PersonalityIntent.ADVICE,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.COMPLIMENT_RESPONSE] = [
+        PersonalityResponse(
+            text="*blinks, surprised* That's... most kind. In my experience, scholars are more often mocked than praised. Thank you — that means more than you know.",
+            intent=PersonalityIntent.COMPLIMENT_RESPONSE,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.INSULT_RESPONSE] = [
+        PersonalityResponse(
+            text="*peers over spectacles* I've been called worse by people who could actually spell. Your insult, like your intellect, is... unrefined. Shall we try again?",
+            intent=PersonalityIntent.INSULT_RESPONSE,
+        ),
+    ]
+
+    return bank
+
+
+def _build_healer_bank() -> ArchetypeBank:
+    """Healer/wellness archetype: Healers, counselors, empaths."""
+    bank = ArchetypeBank(archetype="healer")
+
+    bank.responses[PersonalityIntent.SONG] = [
+        PersonalityResponse(
+            text="*hums softly* 'Breathe in the light, breathe out the pain, let peace return to you again...' It's a healing chant. I find it calms the mind.",
+            intent=PersonalityIntent.SONG,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.PERSONAL] = [
+        PersonalityResponse(
+            text="*gentle smile* I chose this path because I believe everyone deserves to be heard — truly heard. The world has enough people who talk. It needs more who listen.",
+            intent=PersonalityIntent.PERSONAL,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.PHILOSOPHICAL] = [
+        PersonalityResponse(
+            text="Suffering is part of being alive — but so is healing. I've seen people survive things that should have broken them completely. The human spirit... it's stronger than any medicine I can mix.",
+            intent=PersonalityIntent.PHILOSOPHICAL,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.ADVICE] = [
+        PersonalityResponse(
+            text="Be gentle with yourself. You carry more than you show, and that takes strength. Rest isn't weakness — it's how you rebuild. Take care of the vessel, and the spirit follows.",
+            intent=PersonalityIntent.ADVICE,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.COMPLIMENT_RESPONSE] = [
+        PersonalityResponse(
+            text="*warm smile* Thank you — that's very kind. But the real credit goes to you for taking the time to care. That's rarer than people think.",
+            intent=PersonalityIntent.COMPLIMENT_RESPONSE,
+        ),
+    ]
+
+    bank.responses[PersonalityIntent.INSULT_RESPONSE] = [
+        PersonalityResponse(
+            text="*calm expression* I hear frustration in your words, and I understand. Sometimes pain speaks louder than we intend. I'm here when you're ready to talk.",
+            intent=PersonalityIntent.INSULT_RESPONSE,
+        ),
+    ]
+
+    return bank
+
+
+# ── Registry of all built-in archetype banks ──
 _ARCHETYPE_BANKS: Dict[str, ArchetypeBank] = {}
 
 
@@ -375,9 +379,11 @@ def _ensure_banks_loaded():
     global _ARCHETYPE_BANKS
     if not _ARCHETYPE_BANKS:
         _ARCHETYPE_BANKS = {
-            "merchant": _build_merchant_bank(),
+            "merchant": _build_guard_bank(),  # Generic merchant uses guard as fallback
             "guard": _build_guard_bank(),
             "innkeeper": _build_innkeeper_bank(),
+            "scholar": _build_scholar_bank(),
+            "healer": _build_healer_bank(),
         }
 
 
@@ -385,14 +391,36 @@ class PersonalityBank:
     """
     Module 7 of the Cognitive Engine.
     Pre-authored creative responses selected by archetype + intent + emotion.
+    
+    Loading priority:
+    1. Custom bank from personality.json file (character-specific)
+    2. Custom bank passed via constructor
+    3. Built-in archetype bank by name
+    4. Guard bank as ultimate fallback
     """
 
-    def __init__(self, archetype: str = "merchant", custom_bank: Optional[ArchetypeBank] = None):
+    def __init__(
+        self,
+        archetype: str = "merchant",
+        custom_bank: Optional[ArchetypeBank] = None,
+        personality_file: Optional[str] = None,
+    ):
         _ensure_banks_loaded()
-        if custom_bank:
+        
+        # Priority: file > custom > built-in
+        if personality_file:
+            loaded = load_personality_from_file(personality_file)
+            if loaded:
+                self.bank = loaded
+            elif custom_bank:
+                self.bank = custom_bank
+            else:
+                self.bank = _ARCHETYPE_BANKS.get(archetype, _ARCHETYPE_BANKS.get("guard"))
+        elif custom_bank:
             self.bank = custom_bank
         else:
-            self.bank = _ARCHETYPE_BANKS.get(archetype, _ARCHETYPE_BANKS.get("merchant"))
+            self.bank = _ARCHETYPE_BANKS.get(archetype, _ARCHETYPE_BANKS.get("guard"))
+        
         self.archetype = archetype
 
     def detect_intent(self, query: str, keywords: Set[str]) -> PersonalityIntent:

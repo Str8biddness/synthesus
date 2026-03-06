@@ -27,7 +27,7 @@ from .relationship_tracker import RelationshipTracker
 from .world_state_reactor import WorldStateReactor, WorldReaction
 from .escalation_gate import EscalationGate
 from .personality_bank import PersonalityBank
-from .knowledge_graph import KnowledgeGraph, build_garen_knowledge
+from .knowledge_graph import KnowledgeGraph, load_knowledge_from_file, load_knowledge_from_dict
 from .context_recall import ContextRecall
 
 
@@ -76,14 +76,22 @@ class CognitiveEngine:
         bio: Dict[str, Any],
         patterns: Dict[str, Any],
         persist_dir: Optional[str] = None,
+        char_dir: Optional[str] = None,
     ):
         self.character_id = character_id
         self.bio = bio
         self.patterns = patterns
         self._persist_dir = Path(persist_dir) if persist_dir else None
 
-        # Extract known entities from bio for the conversation tracker
-        known_entities = self._extract_known_entities(bio, patterns)
+        # Resolve the character directory for loading config files
+        self._char_dir = Path(char_dir) if char_dir else None
+
+        # Module 8: Knowledge Graph — load from knowledge.json if it exists
+        knowledge = self._load_knowledge(bio, character_id)
+        self.knowledge = KnowledgeGraph(knowledge=knowledge)
+
+        # Extract known entities from bio, patterns, AND the knowledge graph
+        known_entities = self._extract_known_entities(bio, patterns, self.knowledge)
 
         # Initialize all 9 modules
         self.tracker = ConversationTracker(known_entities=known_entities)
@@ -98,13 +106,13 @@ class CognitiveEngine:
         )
         self.gate = EscalationGate()
 
-        # Module 7: Personality Bank — creative/personal responses by archetype
+        # Module 7: Personality Bank — load from personality.json if it exists
         archetype = bio.get("archetype", bio.get("role", "merchant")).lower()
-        self.personality = PersonalityBank(archetype=archetype)
-
-        # Module 8: Knowledge Graph — what does this NPC know about the world?
-        knowledge = self._build_knowledge_graph(bio, character_id)
-        self.knowledge = KnowledgeGraph(knowledge=knowledge)
+        personality_file = str(self._char_dir / "personality.json") if self._char_dir else None
+        self.personality = PersonalityBank(
+            archetype=archetype,
+            personality_file=personality_file,
+        )
 
         # Module 9: Context Recall — NPC references its own prior statements
         self.recall = ContextRecall()
@@ -126,27 +134,37 @@ class CognitiveEngine:
         self._recall_handled = 0
 
     @staticmethod
-    def _extract_known_entities(bio: Dict, patterns: Dict) -> Dict[str, str]:
-        """Extract named entities from bio and patterns for the tracker."""
+    def _extract_known_entities(
+        bio: Dict, patterns: Dict, knowledge_graph: Optional[KnowledgeGraph] = None,
+    ) -> Dict[str, str]:
+        """Extract named entities from bio, patterns, and knowledge graph.
+        
+        Entity sources (in priority order):
+        1. Knowledge graph entities (most reliable — typed and aliased)
+        2. NPC's own name from bio
+        3. Capitalized proper nouns found in pattern response_templates
+        """
         entities = {}
 
-        # From bio: look for names of people, places
-        name = bio.get("name", "")
+        # Source 1: Knowledge graph provides typed, aliased entities
+        if knowledge_graph:
+            kg_entities = knowledge_graph.get_known_entities()
+            entities.update(kg_entities)
+
+        # Source 2: NPC's own name from bio
+        name = bio.get("name", bio.get("display_name", ""))
         if name:
-            # NPC's own name
             for part in name.split():
                 if len(part) > 2:
                     entities[part] = "SELF"
 
-        # Scan all pattern response_templates for capitalized proper nouns
+        # Source 3: Scan pattern response_templates for capitalized proper nouns
         for pat_list in [patterns.get("synthetic_patterns", []),
                          patterns.get("generic_patterns", [])]:
             for pat in pat_list:
                 text = pat.get("response_template", "")
-                # Find capitalized words that aren't sentence starters
                 words = text.split()
                 for j, w in enumerate(words):
-                    # Skip sentence starters (after . ! ? or first word)
                     if j == 0:
                         continue
                     prev = words[j - 1] if j > 0 else ""
@@ -155,36 +173,26 @@ class CognitiveEngine:
                     clean = re.sub(r'[^a-zA-Z]', '', w)
                     if clean and clean[0].isupper() and len(clean) > 2:
                         low = clean.lower()
-                        if low not in _STOP and low not in entities:
-                            # Guess entity type
-                            if low in {"silvermoor", "ironhaven", "blackhollow",
-                                        "frostpeak", "redstone"}:
-                                entities[clean] = "PLACE"
-                            elif low in {"silk", "gold", "sword", "potion",
-                                          "dagger", "armor", "shield"}:
-                                entities[clean] = "ITEM"
-                            else:
-                                entities[clean] = "NPC"
+                        if low not in _STOP and clean not in entities:
+                            # Default to NPC if not already typed by KG
+                            entities[clean] = "NPC"
 
-        # Hardcode some from Garen's lore
-        extra = {
-            "Tomás": "NPC", "Elara": "NPC", "Mirella": "NPC",
-            "Brennan": "NPC", "Thessaly": "NPC", "Aldren": "NPC",
-            "Ironhaven": "PLACE", "Silvermoor": "PLACE",
-            "Blackhollow": "PLACE", "Redstone": "PLACE",
-            "Frostpeak": "PLACE",
-            "Starfire Essence": "ITEM",
-        }
-        entities.update(extra)
         return entities
 
-    @staticmethod
-    def _build_knowledge_graph(bio: Dict, character_id: str) -> Dict:
-        """Build knowledge graph from character data."""
-        # Use Garen's pre-built knowledge for the garen character
-        if character_id in ("garen", "garen_ironfoot"):
-            return build_garen_knowledge()
-        # For other characters, return empty (to be populated per character)
+    def _load_knowledge(self, bio: Dict, character_id: str) -> Dict:
+        """Load knowledge graph from character's knowledge.json file.
+        
+        Falls back to empty dict if no file exists.
+        """
+        if self._char_dir:
+            kg_path = self._char_dir / "knowledge.json"
+            if kg_path.exists():
+                return load_knowledge_from_file(str(kg_path))
+        
+        # Check if bio has inline knowledge data
+        if "knowledge" in bio and isinstance(bio["knowledge"], dict):
+            return load_knowledge_from_dict(bio["knowledge"])
+        
         return {}
 
     @staticmethod
@@ -634,7 +642,14 @@ class CognitiveEngine:
 
     @classmethod
     def from_character_dir(cls, char_dir: str, persist_dir: Optional[str] = None) -> "CognitiveEngine":
-        """Load a CognitiveEngine from a character directory."""
+        """Load a CognitiveEngine from a character directory.
+        
+        Looks for:
+          - bio.json (required)
+          - patterns.json (optional)
+          - knowledge.json (optional, loaded by _load_knowledge)
+          - personality.json (optional, loaded by PersonalityBank)
+        """
         char_path = Path(char_dir)
         bio_path = char_path / "bio.json"
         pat_path = char_path / "patterns.json"
@@ -652,4 +667,5 @@ class CognitiveEngine:
             bio=bio,
             patterns=patterns,
             persist_dir=persist_dir,
+            char_dir=str(char_path),
         )

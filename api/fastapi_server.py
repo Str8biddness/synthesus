@@ -56,10 +56,12 @@ def _get_cognitive_engine(char_id: str) -> Optional[CognitiveEngine]:
     if char_data is None:
         return None
     try:
+        char_dir = os.path.join(CHARACTERS_DIR, char_id)
         engine = CognitiveEngine(
             character_id=char_id,
             bio=char_data["bio"],
             patterns=char_data["patterns"],
+            char_dir=char_dir,
         )
         _cognitive_engines[char_id] = engine
         return engine

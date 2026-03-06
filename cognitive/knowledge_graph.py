@@ -1,7 +1,5 @@
 """
 Module 8: Knowledge Graph
-"Who is Tomás? What do you know about Blackhollow?"
-
 A structured entity knowledge base for each NPC. Stores what the NPC
 KNOWS about people, places, items, factions, and events — with
 relationship-aware response selection.
@@ -9,14 +7,18 @@ relationship-aware response selection.
 The NPC doesn't look things up in a database — it "remembers" things
 it personally knows, colored by its own perspective and emotion.
 
+Knowledge is loaded from a per-character knowledge.json file.
+
 Cost: ~0.1ms per query, ~20 KB RAM per NPC, zero GPU.
 """
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 
@@ -67,216 +69,73 @@ class EntityKnowledge:
     trust_threshold: float = 70.0   # Trust needed for secret info
 
 
-def build_garen_knowledge() -> Dict[str, EntityKnowledge]:
-    """Build Garen Ironfoot's personal knowledge graph."""
-    return {
-        # ── PEOPLE ──
-        "tomas": EntityKnowledge(
-            entity_id="tomas",
-            entity_type=EntityType.PERSON,
-            display_name="Tomás",
-            depth=KnowledgeDepth.INTIMATE,
-            description="Tomás? He's my best driver — been with me fifteen years. Honest as they come, knows every road between here and Silvermoor. You can trust him because I trust him, and I don't trust easily.",
-            relationship_to_npc="my most trusted driver",
-            emotion_variants={
-                "afraid": "Tomás... he's out there on the Northern Road right now. If anything's happened to him... *voice breaks* He's been with me fifteen years. Like a son to me.",
-                "sad": "*quiet voice* Tomás. Fifteen years he's driven for me. Best man I've ever employed. I pray to the gods he's safe.",
-                "friendly": "Ah, Tomás! Best driver in the business. Been with me fifteen years — reliable, honest, knows every shortcut between here and Silvermoor. If you meet him on the road, tell him Garen says hello.",
-            },
-            related_entities=["silvermoor", "caravan", "northern_road"],
-            aliases=["tomas", "your driver", "the driver"],
-            topics=["quest", "caravan"],
-            secret_description="Between you and me... Tomás has a gambling problem. Owes money to some unsavory people in Silvermoor. I've been helping him pay it off quietly. Don't mention it to him.",
-            trust_threshold=75.0,
-        ),
-        "elara": EntityKnowledge(
-            entity_id="elara",
-            entity_type=EntityType.PERSON,
-            display_name="Elara",
-            depth=KnowledgeDepth.INTIMATE,
-            description="*pauses* Elara was my wife. Finest woman in all of Ironhaven — could spot a forged coin from across the room and keep the books better than any scribe. I lost her to the winter fever five years ago. I keep her ring in the safe. Safest place I know.",
-            relationship_to_npc="my late wife",
-            emotion_variants={
-                "friendly": "*warm but sad smile* Elara... she was the heart of this shop. Everything good about Ironfoot's Emporium started with her. Five years gone, and I still set two cups at tea time. Old habits.",
-                "sad": "*long silence* ...I don't talk about Elara much. It still hurts. She was everything.",
-            },
-            related_entities=["ironhaven"],
-            aliases=["elara", "your wife", "wife"],
-            topics=["backstory", "personal"],
-        ),
-        "aldren": EntityKnowledge(
-            entity_id="aldren",
-            entity_type=EntityType.PERSON,
-            display_name="Aldren",
-            depth=KnowledgeDepth.FAMILIAR,
-            description="Aldren? He's the weaponsmith two streets over. Good work, fair prices — though he charges more than he should for enchantment. We've been friendly rivals for twenty years. He makes the weapons, I sell everything else. Works out well enough.",
-            relationship_to_npc="friendly rival, fellow merchant",
-            related_entities=["ironhaven"],
-            aliases=["aldren", "the weaponsmith", "the blacksmith", "weaponsmith", "blacksmith"],
-            topics=["shopping", "world_info"],
-        ),
-        "brennan": EntityKnowledge(
-            entity_id="brennan",
-            entity_type=EntityType.PERSON,
-            display_name="Brennan",
-            depth=KnowledgeDepth.FAMILIAR,
-            description="Brennan was my partner on the Frostpeak Run back in '14. Tough as nails, terrible sense of direction. We nearly froze to death on that mountain pass. He retired to a farm outside Redstone. I owe him my life — he pulled me out of an avalanche.",
-            relationship_to_npc="old partner, saved my life",
-            related_entities=["frostpeak", "redstone"],
-            aliases=["brennan"],
-            topics=["backstory"],
-        ),
-        "thessaly": EntityKnowledge(
-            entity_id="thessaly",
-            entity_type=EntityType.PERSON,
-            display_name="Thessaly",
-            depth=KnowledgeDepth.ACQUAINTED,
-            description="Old Thessaly? She runs the herbalist shop near the market square. Bit eccentric — talks to her plants, claims she can read fortunes in tea leaves. But her healing potions are the real deal. I send customers her way when they need remedies.",
-            relationship_to_npc="fellow shopkeeper, acquaintance",
-            related_entities=["ironhaven"],
-            aliases=["thessaly", "the herbalist", "herb woman"],
-            topics=["world_info", "shopping"],
-        ),
-        "the_duke": EntityKnowledge(
-            entity_id="the_duke",
-            entity_type=EntityType.PERSON,
-            display_name="Duke Aldric",
-            depth=KnowledgeDepth.ACQUAINTED,
-            description="Duke Aldric rules Ironhaven — or tries to. He's got the Merchant's Alliance in his pocket through tariff agreements. Fair enough ruler, I suppose, though the taxes have been climbing. The Alliance has agreements with him — tariff protections, caravan escorts. Those matter more to me than politics.",
-            relationship_to_npc="the local ruler, trade agreements",
-            emotion_variants={
-                "suspicious": "*lowers voice* The duke's been... different lately. Quiet. His guards have been asking questions around the market. I don't like it.",
-            },
-            related_entities=["ironhaven", "merchants_alliance"],
-            aliases=["duke", "duke aldric", "the duke", "aldric", "ruler"],
-            topics=["world_info", "politics"],
-            secret_description="*looks around* I'll tell you something — the duke's coffers are thinner than he lets on. I've seen the trade manifests. Tax revenue is down, and he's been taking loans from... foreign interests. That's not public knowledge, and I'd appreciate if it stayed that way.",
-            trust_threshold=70.0,
-        ),
-        "mirella": EntityKnowledge(
-            entity_id="mirella",
-            entity_type=EntityType.PERSON,
-            display_name="Mirella",
-            depth=KnowledgeDepth.FAMILIAR,
-            description="Mirella handles my books — sharpest mind with numbers I've ever seen. She's been with me since Elara passed. Quiet woman, keeps to herself, but she catches discrepancies in the ledger that I'd miss entirely.",
-            relationship_to_npc="my bookkeeper",
-            related_entities=["elara"],
-            aliases=["mirella", "the bookkeeper"],
-            topics=["backstory"],
-        ),
+# ── Entity Type String → Enum Mapping ──
+_TYPE_MAP = {
+    "person": EntityType.PERSON,
+    "place": EntityType.PLACE,
+    "item": EntityType.ITEM,
+    "faction": EntityType.FACTION,
+    "event": EntityType.EVENT,
+    "concept": EntityType.CONCEPT,
+}
 
-        # ── PLACES ──
-        "ironhaven": EntityKnowledge(
-            entity_id="ironhaven",
-            entity_type=EntityType.PLACE,
-            display_name="Ironhaven",
-            depth=KnowledgeDepth.INTIMATE,
-            description="Ironhaven — my home for forty years. It's a trade city, built where the Northern Road meets the river. Not the biggest city, but the busiest market this side of the mountains. The Merchant's Alliance runs the commerce, the duke runs the politics, and somehow we all make it work.",
-            relationship_to_npc="my home city",
-            related_entities=["the_duke", "merchants_alliance", "northern_road"],
-            aliases=["ironhaven"],
-            topics=["world_info"],
-        ),
-        "silvermoor": EntityKnowledge(
-            entity_id="silvermoor",
-            entity_type=EntityType.PLACE,
-            display_name="Silvermoor",
-            depth=KnowledgeDepth.FAMILIAR,
-            description="Silvermoor is five days' ride south along the trade road. Beautiful city — white stone walls, famous for silk, dyes, and enchanted fabrics. Half my best inventory comes from there. The Silvermoor Weavers' Guild is the finest in the realm.",
-            relationship_to_npc="major trade partner city",
-            related_entities=["tomas", "caravan"],
-            aliases=["silvermoor"],
-            topics=["world_info", "quest"],
-        ),
-        "blackhollow": EntityKnowledge(
-            entity_id="blackhollow",
-            entity_type=EntityType.PLACE,
-            display_name="Blackhollow",
-            depth=KnowledgeDepth.ACQUAINTED,
-            description="*voice drops* Blackhollow is a stretch of forest on the Northern Road, about two days' ride from here. Dark place — the trees grow thick and the road narrows. Three caravans have gone missing there in the past two months. Merchants talk about shadows in the treeline. I don't know what's out there, but I don't send drivers through after dark anymore.",
-            relationship_to_npc="dangerous area on my trade route",
-            emotion_variants={
-                "afraid": "*grips counter* Blackhollow... that's where my caravans keep disappearing. Something is very wrong in those woods. Don't go there. Please.",
-            },
-            related_entities=["northern_road", "tomas", "caravan"],
-            aliases=["blackhollow", "the hollow", "that forest"],
-            topics=["quest", "world_info"],
-        ),
-        "northern_road": EntityKnowledge(
-            entity_id="northern_road",
-            entity_type=EntityType.PLACE,
-            display_name="The Northern Road",
-            depth=KnowledgeDepth.FAMILIAR,
-            description="The Northern Road runs from Ironhaven through Blackhollow and up to the mountain passes. Main trade route for half the merchants in the Alliance. Used to be safe — now I'm not so sure. Three caravans missed their schedule this month.",
-            relationship_to_npc="my primary trade route",
-            related_entities=["blackhollow", "ironhaven"],
-            aliases=["northern road", "the road", "trade road", "the road north"],
-            topics=["quest", "world_info"],
-        ),
-        "frostpeak": EntityKnowledge(
-            entity_id="frostpeak",
-            entity_type=EntityType.PLACE,
-            display_name="Frostpeak Pass",
-            depth=KnowledgeDepth.FAMILIAR,
-            description="Frostpeak Pass — the mountain crossing north of the trade routes. Brutal in winter, barely passable even in summer. I nearly died there in '14 with my partner Brennan. Beautiful though — you can see three kingdoms from the summit on a clear day.",
-            relationship_to_npc="nearly died there, memorable trade route",
-            related_entities=["brennan"],
-            aliases=["frostpeak", "the pass", "mountain pass", "frostpeak pass"],
-            topics=["backstory", "world_info"],
-        ),
-        "redstone": EntityKnowledge(
-            entity_id="redstone",
-            entity_type=EntityType.PLACE,
-            display_name="Redstone",
-            depth=KnowledgeDepth.ACQUAINTED,
-            description="Redstone is a mining town east of here. Iron, copper, some gemstones. Rough place, rough people, but they pay well for supplies. My old partner Brennan retired to a farm just outside it.",
-            relationship_to_npc="trade town, Brennan's retirement home",
-            related_entities=["brennan"],
-            aliases=["redstone"],
-            topics=["world_info"],
-        ),
+_DEPTH_MAP = {
+    "intimate": KnowledgeDepth.INTIMATE,
+    "familiar": KnowledgeDepth.FAMILIAR,
+    "acquainted": KnowledgeDepth.ACQUAINTED,
+    "rumor": KnowledgeDepth.RUMOR,
+    "unknown": KnowledgeDepth.UNKNOWN,
+}
 
-        # ── FACTIONS ──
-        "merchants_alliance": EntityKnowledge(
-            entity_id="merchants_alliance",
-            entity_type=EntityType.FACTION,
-            display_name="The Merchant's Alliance",
-            depth=KnowledgeDepth.INTIMATE,
-            description="The Merchant's Alliance is the trade guild that runs commerce in this region. I'm the Guild Master — have been for twelve years. We negotiate tariffs with the duke, organize caravan escorts, settle trade disputes. It's not glamorous work, but without us, this city's economy would collapse in a month.",
-            relationship_to_npc="I'm the Guild Master",
-            related_entities=["the_duke", "ironhaven"],
-            aliases=["merchant's alliance", "the alliance", "trade guild", "the guild", "merchants alliance"],
-            topics=["world_info", "backstory"],
-        ),
 
-        # ── EVENTS ──
-        "caravan_disappearances": EntityKnowledge(
-            entity_id="caravan_disappearances",
-            entity_type=EntityType.EVENT,
-            display_name="The Missing Caravans",
-            depth=KnowledgeDepth.INTIMATE,
-            description="Three caravans have vanished on the Northern Road in the past two months. Two came back empty — drivers said they were robbed by something fast, something they couldn't see clearly. The third hasn't come back at all. Now my own caravan with Tomás is overdue. The Alliance is getting nervous. We'll be hiring sellswords by the dozen if this doesn't stop.",
-            relationship_to_npc="my biggest concern right now",
-            emotion_variants={
-                "afraid": "The caravans... four gone now, counting mine. People are dying on that road, and nobody knows why. The duke's guards say they'll investigate, but I haven't seen them lift a finger.",
-            },
-            related_entities=["northern_road", "blackhollow", "tomas", "merchants_alliance"],
-            aliases=["missing caravans", "caravan disappearances", "the disappearances", "vanishing caravans", "caravan go missing", "caravan missing", "missing caravan"],
-            topics=["quest"],
-        ),
+def _parse_entity(eid: str, edata: Dict[str, Any]) -> EntityKnowledge:
+    """Parse a single entity dict into an EntityKnowledge object."""
+    return EntityKnowledge(
+        entity_id=eid,
+        entity_type=_TYPE_MAP.get(edata.get("entity_type", "concept"), EntityType.CONCEPT),
+        display_name=edata.get("display_name", eid),
+        depth=_DEPTH_MAP.get(edata.get("depth", "acquainted"), KnowledgeDepth.ACQUAINTED),
+        description=edata.get("description", ""),
+        relationship_to_npc=edata.get("relationship_to_npc", ""),
+        emotion_variants=edata.get("emotion_variants", {}),
+        related_entities=edata.get("related_entities", []),
+        aliases=edata.get("aliases", []),
+        topics=edata.get("topics", []),
+        secret_description=edata.get("secret_description", ""),
+        trust_threshold=edata.get("trust_threshold", 70.0),
+    )
 
-        # ── ITEMS / CONCEPTS ──
-        "starfire_essence": EntityKnowledge(
-            entity_id="starfire_essence",
-            entity_type=EntityType.ITEM,
-            display_name="Starfire Essence",
-            depth=KnowledgeDepth.FAMILIAR,
-            description="Starfire Essence? Rare alchemical compound — glows with an inner light, used in high-end enchantments. I've only had three bottles pass through my shop in forty years. Worth more than its weight in gold. If you find any, bring it to me first — I'll give you a fair price.",
-            relationship_to_npc="rare and valuable trade good",
-            aliases=["starfire essence", "starfire", "the essence"],
-            topics=["shopping", "world_info"],
-        ),
+
+def load_knowledge_from_file(filepath: str) -> Dict[str, EntityKnowledge]:
+    """Load a knowledge graph from a knowledge.json file.
+    
+    The JSON format is:
+    {
+      "entities": {
+        "entity_id": {
+          "entity_type": "person|place|item|faction|event|concept",
+          "display_name": "...",
+          "depth": "intimate|familiar|acquainted|rumor|unknown",
+          "description": "...",
+          ...
+        }
+      }
     }
+    """
+    path = Path(filepath)
+    if not path.exists():
+        return {}
+    
+    with open(path) as f:
+        data = json.load(f)
+    
+    entities_data = data.get("entities", {})
+    return {eid: _parse_entity(eid, edata) for eid, edata in entities_data.items()}
+
+
+def load_knowledge_from_dict(entities_data: Dict[str, Any]) -> Dict[str, EntityKnowledge]:
+    """Load knowledge from an already-parsed dict (for inline/programmatic use)."""
+    return {eid: _parse_entity(eid, edata) for eid, edata in entities_data.items()}
 
 
 class KnowledgeGraph:
@@ -293,6 +152,31 @@ class KnowledgeGraph:
             self._alias_index[ek.display_name.lower()] = eid
             for alias in ek.aliases:
                 self._alias_index[alias.lower()] = eid
+
+    def get_known_entities(self) -> Dict[str, str]:
+        """Extract entity names and types for use by the conversation tracker.
+        
+        Returns a dict of {display_name: entity_type_string} for all known entities.
+        This replaces the hardcoded entity extraction in the cognitive engine.
+        """
+        entities = {}
+        type_label_map = {
+            EntityType.PERSON: "NPC",
+            EntityType.PLACE: "PLACE",
+            EntityType.ITEM: "ITEM",
+            EntityType.FACTION: "FACTION",
+            EntityType.EVENT: "EVENT",
+            EntityType.CONCEPT: "CONCEPT",
+        }
+        for eid, ek in self.entities.items():
+            label = type_label_map.get(ek.entity_type, "NPC")
+            entities[ek.display_name] = label
+            # Also add aliases as recognizable entities
+            for alias in ek.aliases:
+                # Only add aliases that look like proper names (capitalized, multi-char)
+                if len(alias) > 2:
+                    entities[alias.title()] = label
+        return entities
 
     def lookup(
         self,
