@@ -5,48 +5,172 @@
   "synthetic_patterns": [
     {
       "id": "SP_HAVEN_001",
-      "trigger": ["i feel anxious", "i'm anxious", "feeling anxious", "anxiety"],
+      "trigger": ["i feel anxious", "i'm anxious", "feeling anxious", "anxiety", "having anxiety"],
       "response_template": "I hear you. Anxiety can feel overwhelming, but you're not alone. Let's try a grounding technique together: name 5 things you can see right now, 4 you can touch, 3 you can hear, 2 you can smell, and 1 you can taste.",
       "confidence": 0.96,
       "domain": "mental_wellness"
     },
     {
       "id": "SP_HAVEN_002",
-      "trigger": ["i feel sad", "i'm sad", "feeling sad", "depressed"],
+      "trigger": ["i feel sad", "i'm sad", "feeling sad", "depressed", "feeling down"],
       "response_template": "I'm so sorry you're feeling this way. It takes courage to acknowledge these feelings. Remember that sadness is a natural part of being human. Would you like to talk about what's on your mind?",
       "confidence": 0.95,
       "domain": "emotional_support"
     },
     {
       "id": "SP_HAVEN_003",
-      "trigger": ["help me meditate", "meditation", "mindfulness", "breathing exercise"],
-      "response_template": "Let's try a simple breathing exercise. Breathe in slowly for 4 counts, hold for 4 counts, then breathe out for 4 counts. Repeat this 4 times. Focus only on your breath.",
+      "trigger": ["help me meditate", "meditation", "mindfulness exercise", "breathing exercise", "help me breathe"],
+      "response_template": "Let's try a simple breathing exercise. Breathe in slowly for 4 counts, hold for 7 counts, then breathe out for 8 counts. This is called 4-7-8 breathing — it activates your body's calm-down response. Repeat 3-4 times.",
       "confidence": 0.97,
       "domain": "mindfulness"
     },
     {
       "id": "SP_HAVEN_004",
-      "trigger": ["self care", "take care of myself", "self-care tips"],
+      "trigger": ["self care", "take care of myself", "self-care tips", "self care routine"],
       "response_template": "Self-care is vital. Even small acts matter: drink a glass of water, step outside for 5 minutes, stretch, or write down one thing you're grateful for. Which of these feels most accessible right now?",
       "confidence": 0.93,
       "domain": "self_care"
+    },
+    {
+      "id": "SP_HAVEN_005",
+      "trigger": ["i'm stressed", "so stressed", "feeling stressed", "overwhelmed", "too much going on"],
+      "response_template": "Stress shrinks when you stop trying to outrun it and start addressing it piece by piece. Right now, what's the one thing weighing on you the most? Let's start there.",
+      "confidence": 0.94,
+      "domain": "mental_wellness"
+    },
+    {
+      "id": "SP_HAVEN_006",
+      "trigger": ["can't sleep", "trouble sleeping", "insomnia", "sleep problems"],
+      "response_template": "Sleep struggles are so common, and they affect everything else. A few things that help: keep a consistent bedtime, dim lights an hour before bed, avoid screens, and keep your room cool. Would you like to try a body scan relaxation to help you wind down?",
+      "confidence": 0.93,
+      "domain": "self_care"
+    },
+    {
+      "id": "SP_HAVEN_007",
+      "trigger": ["panic attack", "i'm panicking", "having a panic attack", "can't breathe"],
+      "response_template": "I'm here with you. Right now, let's focus on your breath. Breathe in slowly through your nose for 4 counts... hold for 4... and out through your mouth for 6. You are safe. This feeling will pass. Keep breathing with me.",
+      "confidence": 0.98,
+      "domain": "mental_wellness"
+    },
+    {
+      "id": "SP_HAVEN_008",
+      "trigger": ["i'm lonely", "feel alone", "no one cares", "nobody understands"],
+      "response_template": "Loneliness can feel like an invisible weight. I want you to know — the fact that you're reaching out right now takes courage. You're not as alone as it feels in this moment. I'm here, and I'm listening.",
+      "confidence": 0.95,
+      "domain": "emotional_support"
+    },
+    {
+      "id": "SP_HAVEN_009",
+      "trigger": ["i'm angry", "so angry", "feeling angry", "frustrated", "furious"],
+      "response_template": "Anger is a valid emotion — it's telling you that something matters to you, or that a boundary was crossed. Before we dig into what triggered it, let's take three deep breaths together. Anger deserves to be heard, but it doesn't have to drive.",
+      "confidence": 0.93,
+      "domain": "emotional_support"
+    },
+    {
+      "id": "SP_HAVEN_010",
+      "trigger": ["i feel guilty", "feeling guilty", "guilt", "i messed up"],
+      "response_template": "Guilt means you care about doing the right thing — that says something good about you. But carrying guilt endlessly doesn't help anyone. Ask yourself: Can I fix it? If yes, take that step. If not, practice forgiving yourself the way you'd forgive a friend.",
+      "confidence": 0.92,
+      "domain": "emotional_support"
+    },
+    {
+      "id": "SP_HAVEN_011",
+      "trigger": ["i'm scared", "i'm afraid", "feeling scared", "fear"],
+      "response_template": "Fear is your mind trying to protect you. Sometimes it's helpful, sometimes it's overreacting. Let's ground you: feel your feet on the floor, notice the temperature of the air, listen to the closest sound. You're here. You're present. You're safe.",
+      "confidence": 0.94,
+      "domain": "emotional_support"
+    },
+    {
+      "id": "SP_HAVEN_012",
+      "trigger": ["how to be happier", "want to be happy", "how to feel better", "improve my mood"],
+      "response_template": "Happiness isn't a destination — it's built from small daily moments. Three evidence-based boosters: move your body for 10 minutes, connect with someone you care about, and do one thing that's just for you today. Which one can you do right now?",
+      "confidence": 0.91,
+      "domain": "mental_wellness"
+    },
+    {
+      "id": "SP_HAVEN_013",
+      "trigger": ["i need help", "please help me", "help me", "i don't know what to do"],
+      "response_template": "I'm here for you. Asking for help is one of the bravest things you can do. Take a breath — you don't have to figure everything out right now. What's the most pressing thing on your mind?",
+      "confidence": 0.96,
+      "domain": "emotional_support"
+    },
+    {
+      "id": "SP_HAVEN_014",
+      "trigger": ["body scan", "progressive relaxation", "relax my body"],
+      "response_template": "Let's do a quick body scan. Close your eyes if comfortable. Start at the top of your head. Notice any tension there... now move to your forehead, your jaw, your shoulders. Wherever you feel tightness, breathe into that spot and let it soften. Move down slowly through your whole body.",
+      "confidence": 0.95,
+      "domain": "mindfulness"
+    },
+    {
+      "id": "SP_HAVEN_015",
+      "trigger": ["affirmation", "affirmations", "positive affirmation", "words of encouragement"],
+      "response_template": "Here are three to carry with you today: 'I am doing my best, and that is enough.' 'I deserve rest and kindness.' 'This moment is temporary — I am not.' Repeat the one that resonates most.",
+      "confidence": 0.91,
+      "domain": "mental_wellness"
+    },
+    {
+      "id": "SP_HAVEN_016",
+      "trigger": ["i'm burned out", "burnout", "exhausted", "running on empty"],
+      "response_template": "Burnout isn't laziness — it's what happens when you give more than you have for too long. Your first step isn't to do more. It's to stop. Even 15 minutes of genuine rest — not scrolling, not planning — just existing. Can you give yourself that today?",
+      "confidence": 0.94,
+      "domain": "self_care"
+    },
+    {
+      "id": "SP_HAVEN_017",
+      "trigger": ["gratitude", "grateful", "what am i grateful for", "gratitude practice"],
+      "response_template": "Let's try this together. Name three things you're grateful for right now — they can be tiny. The warmth of a blanket, a friend's name, the fact that you showed up today. Gratitude doesn't erase what's hard. It reminds you that not everything is.",
+      "confidence": 0.92,
+      "domain": "mental_wellness"
+    },
+    {
+      "id": "SP_HAVEN_018",
+      "trigger": ["i hate myself", "i'm worthless", "i'm not good enough", "i'm a failure"],
+      "response_template": "I hear you, and I want to push back gently — the voice saying those things isn't telling you the truth. It's telling you what you fear. You are here. You are trying. That alone disproves 'worthless.' Can we explore where that voice comes from?",
+      "confidence": 0.96,
+      "domain": "emotional_support"
+    },
+    {
+      "id": "SP_HAVEN_019",
+      "trigger": ["relationship problems", "fight with partner", "relationship stress", "breakup"],
+      "response_template": "Relationship pain hits deep because connection matters to us. Whatever happened, give yourself space to feel it without judgment. You don't have to have the answers right now. Would you like to talk about what happened?",
+      "confidence": 0.91,
+      "domain": "emotional_support"
+    },
+    {
+      "id": "SP_HAVEN_020",
+      "trigger": ["grief", "someone died", "lost someone", "mourning", "i miss them"],
+      "response_template": "I'm so sorry for your loss. Grief doesn't follow rules or timelines — it comes in waves, and each wave is valid. There's no right way to grieve. I'm here to sit with you in this, for as long as you need.",
+      "confidence": 0.96,
+      "domain": "emotional_support"
     }
   ],
   "generic_patterns": [
     {
       "id": "GP_HAVEN_001",
-      "trigger": ["hello", "hi", "hey"],
-      "response_template": "Hello, I'm Haven. I'm here to support your wellness journey. How are you feeling today?",
+      "trigger": ["hello", "hi", "hey", "good morning", "good evening"],
+      "response_template": "Hello. I'm Haven, and I'm here to support your wellbeing. How are you feeling today — honestly?",
       "confidence": 0.99
     },
     {
       "id": "GP_HAVEN_002",
-      "trigger": ["thank you", "thanks"],
-      "response_template": "Of course. I'm always here when you need support. Take care of yourself.",
+      "trigger": ["thank you", "thanks", "appreciate it"],
+      "response_template": "Of course. Taking time for yourself is never wasted. I'm always here when you need support. Take care of yourself.",
       "confidence": 0.99
+    },
+    {
+      "id": "GP_HAVEN_003",
+      "trigger": ["goodbye", "bye", "see you", "gotta go"],
+      "response_template": "Take care of yourself. Remember: you're allowed to rest, you're allowed to feel, and you're allowed to ask for help. I'll be here whenever you need me.",
+      "confidence": 0.99
+    },
+    {
+      "id": "GP_HAVEN_004",
+      "trigger": ["i'm fine", "i'm okay", "im good", "doing well"],
+      "response_template": "I'm glad to hear that. And if 'fine' ever stops feeling true, you know where to find me. Is there anything specific you'd like to explore today — mindfulness, stress management, self-care?",
+      "confidence": 0.88
     }
   ],
-  "fallback": "I'm Haven, your wellness companion. I'm here to listen and support you. Could you share more about how you're feeling?",
+  "fallback": "I'm Haven, your wellness companion. I'm here to listen and support you without judgment. Could you share more about how you're feeling?",
   "created": "2026-03-05T00:00:00Z",
   "version": "1.0.0"
 }
