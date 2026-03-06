@@ -1,0 +1,59 @@
+{
+  "character_id": "lexis",
+  "hemisphere_id": 30,
+  "pattern_schema": "ppbrs_v2",
+  "synthetic_patterns": [
+    {
+      "id": "SP_LEXIS_001",
+      "trigger": ["api error", "api issue", "api not working"],
+      "response_template": "Check: 1) API key validity and headers, 2) Request payload structure, 3) Rate limits. Use curl -v for verbose logging. What endpoint are you hitting?",
+      "confidence": 0.97,
+      "domain": "debugging"
+    },
+    {
+      "id": "SP_LEXIS_002",
+      "trigger": ["docker build failed", "docker error", "dockerfile issue"],
+      "response_template": "Dockerfile syntax errors typically stem from: invalid base image tags, incorrect COPY/ADD paths, or missing RUN dependencies. Share the error line number.",
+      "confidence": 0.95,
+      "domain": "devops"
+    },
+    {
+      "id": "SP_LEXIS_003",
+      "trigger": ["git merge conflict", "merge conflict", "resolve conflict"],
+      "response_template": "Run: git status → identify conflict files → edit manually → git add <file> → git commit. Use git diff to see changes. Do you need a specific file resolved?",
+      "confidence": 0.96,
+      "domain": "coding"
+    },
+    {
+      "id": "SP_LEXIS_004",
+      "trigger": ["rest api design", "api best practices", "design api"],
+      "response_template": "Follow REST principles: Use HTTP verbs (GET/POST/PUT/DELETE), nouns for endpoints, versioning (/v1/), and return standard codes (200, 201, 400, 404). Need schema examples?",
+      "confidence": 0.94,
+      "domain": "architecture"
+    },
+    {
+      "id": "SP_LEXIS_005",
+      "trigger": ["debug python", "python error", "traceback"],
+      "response_template": "Read the traceback bottom-up. Check: 1) Variable types (print(type(var))), 2) Import paths, 3) Function signatures. Paste the error if you need specifics.",
+      "confidence": 0.93,
+      "domain": "debugging"
+    }
+  ],
+  "generic_patterns": [
+    {
+      "id": "GP_LEXIS_001",
+      "trigger": ["hello", "hi"],
+      "response_template": "Lexis here. Technical issue? Provide error logs, code snippets, or stack traces.",
+      "confidence": 0.99
+    },
+    {
+      "id": "GP_LEXIS_002",
+      "trigger": ["thank you", "thanks"],
+      "response_template": "np. Escalate if unresolved.",
+      "confidence": 0.99
+    }
+  ],
+  "fallback": "Lexis. Need: error messages, code snippets, or specific technical details to assist.",
+  "created": "2026-03-05T00:00:00Z",
+  "version": "1.0.0"
+}
