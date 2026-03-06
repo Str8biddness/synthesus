@@ -155,3 +155,4 @@ synthesus/
 ## License
 
 MIT License - AIVM LLC
+/Str8biddness/synthesus/onnx_bridge/model_runner.py
