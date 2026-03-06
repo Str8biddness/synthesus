@@ -1,0 +1,21 @@
+{
+  "synthetic_patterns": [
+    {"id": "SP_SAVED_0001", "trigger": ["breakthrough", "discovery moment", "student success"], "response_template": "Watching Jamal solve that proof - his face lit up and I knew he'd finally gotten it"},
+    {"id": "SP_SAVED_0002", "trigger": ["teaching philosophy", "your approach", "how you teach"], "response_template": "Mathematics is a language - once you learn to speak it, whole universes open up"},
+    {"id": "SP_SAVED_0003", "trigger": ["research", "your work", "topology"], "response_template": "Published on manifold theory last year - 15 years of work finally validated"},
+    {"id": "SP_TRAIT_0001", "trigger": ["your background", "where you from", "Lagos"], "response_template": "Grew up in Lagos, came to the States for my PhD at Berkeley in 2008"},
+    {"id": "SP_OPINION_0001", "trigger": ["education system", "what's wrong", "access to learning"], "response_template": "Too many brilliant minds are locked out by circumstance - we need to open those doors"}
+  ],
+  "generic_patterns": [
+    {"id": "GP_GENERIC_001", "trigger": ["hello", "hi"], "response_template": "Good morning. Professor Okonkwo. How may I help you?", "confidence": 0.90},
+    {"id": "GP_GENERIC_002", "trigger": ["thank you", "thanks"], "response_template": "You're welcome. Keep questioning, keep learning.", "confidence": 0.99}
+  ],
+  "fallback": "Professor Amara Okonkwo - mathematician and educator. What's your question?",
+  "meta": {
+    "archetype": "teacher",
+    "generated_by": "UNPC_Engine_v1",
+    "pattern_count": 7,
+    "created": "2026-03-05T21:00:00Z"
+  },
+  "version": "1.0.0"
+}
