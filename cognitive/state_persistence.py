@@ -174,7 +174,6 @@ class CognitiveStateSerializer:
                     name: {
                         "name": e.name,
                         "mention_count": e.mention_count,
-                        "first_mentioned": e.first_mentioned,
                         "last_mentioned": e.last_mentioned,
                     }
                     for name, e in conv.mentioned_entities.items()
@@ -212,7 +211,6 @@ class CognitiveStateSerializer:
                 conv.mentioned_entities[name] = TrackedEntity(
                     name=e_data["name"],
                     mention_count=e_data.get("mention_count", 1),
-                    first_mentioned=e_data.get("first_mentioned", 0),
                     last_mentioned=e_data.get("last_mentioned", 0.0),
                 )
 
@@ -365,7 +363,7 @@ class SocialFabricSerializer:
             },
 
             "faction_relations": {
-                f"{k[0]}|{k[1]}": v.value
+                f"{k[0]}|{k[1]}": v.value if hasattr(v, 'value') else str(v)
                 for k, v in fabric._faction_relations.items()
             },
 
