@@ -3,15 +3,55 @@
     "schema_version": "character_genome_v2",
     "description": "Synthesus Character Registry — Auto-generated from character directories",
     "hemisphere_allocation": {
+        "1": "synthesus",
+        "2": "computress",
         "10": "synth",
         "20": "haven",
         "30": "lexis",
         "100": "garen",
         "next_available": 110,
         "marketplace_range": "100-199",
-        "enterprise_range": "200-255"
+        "enterprise_range": "200-255",
+        "platform_range": "1-9"
     },
     "characters": [
+        {
+            "character_id": "synthesus",
+            "display_name": "Synthesus",
+            "version": "1.0.0",
+            "hemisphere_id": 1,
+            "type": "platform_ai_npc",
+            "status": "active",
+            "description": "AIVM's flagship male AI NPC. Authoritative, technical, precise. The engineer of the pair — leads with architecture, benchmarks, and engineering depth. Dry wit, commanding presence.",
+            "path": "characters/synthesus/",
+            "knowledge_domains": [
+                "about_aivm", "synthesus_architecture", "performance_benchmarks",
+                "dual_hemisphere_design", "ml_swarm", "character_engine",
+                "deployment_and_integration", "use_cases", "products_and_pricing"
+            ],
+            "pattern_count": 48,
+            "genome_files": ["bio.json", "patterns.json", "knowledge.json", "personality.json"],
+            "created": "2026-03-06T00:00:00Z"
+        },
+        {
+            "character_id": "computress",
+            "display_name": "Computress",
+            "version": "1.0.0",
+            "hemisphere_id": 2,
+            "type": "platform_ai_npc",
+            "status": "active",
+            "description": "AIVM's flagship female AI NPC. Warm, creative, engaging. The storyteller of the pair — leads with vision, analogies, and human impact. Playful but substantive.",
+            "path": "characters/computress/",
+            "knowledge_domains": [
+                "about_aivm", "user_experience", "creative_applications",
+                "character_design", "gaming_experience", "enterprise_applications",
+                "onboarding", "synthesus_architecture", "products_and_pricing",
+                "npc_storytelling", "use_cases", "competitive_landscape", "self_awareness"
+            ],
+            "pattern_count": 48,
+            "genome_files": ["bio.json", "patterns.json", "knowledge.json", "personality.json"],
+            "created": "2026-03-06T00:00:00Z"
+        },
         {
             "character_id": "garen",
             "display_name": "Garen Ironfoot",
