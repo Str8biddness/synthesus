@@ -1,7 +1,8 @@
 # cognitive/ — The NPC Right Hemisphere
-# Ten lightweight modules that give NPCs behavioral intelligence
+# Eleven lightweight modules that give NPCs behavioral intelligence
 # without any SLM inference. Module 10 (SemanticMatcher) adds ~80MB
-# shared model for semantic understanding. Zero GPU.
+# shared model for semantic understanding. Module 11 (SocialFabric)
+# enables multi-NPC interactions, factions, and gossip. Zero GPU.
 
 from .conversation_tracker import ConversationTracker
 from .emotion_state_machine import EmotionStateMachine
@@ -13,6 +14,7 @@ from .personality_bank import PersonalityBank, load_personality_from_file
 from .knowledge_graph import KnowledgeGraph, load_knowledge_from_file, load_knowledge_from_dict
 from .context_recall import ContextRecall
 from .semantic_matcher import SemanticMatcher
+from .social_fabric import SocialFabric
 from .cognitive_engine import CognitiveEngine
 
 __all__ = [
@@ -29,5 +31,6 @@ __all__ = [
     "load_personality_from_file",
     "ContextRecall",
     "SemanticMatcher",
+    "SocialFabric",
     "CognitiveEngine",
 ]
