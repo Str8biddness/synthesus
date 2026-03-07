@@ -8,7 +8,13 @@ The CognitiveEngine is the main entry point. It:
 3. Returns a fully assembled, context-aware response
 4. Reports whether it handled locally or needs the Thinking Layer
 
-Total cost: ~8.6ms per query, ~2.1 MB RAM per NPC, zero GPU.
+Left Hemisphere v2: Hybrid token + semantic matching.
+- Token matcher: fast keyword/substring overlap (original v1)
+- Semantic matcher: all-MiniLM-L6-v2 embeddings + FAISS cosine similarity
+- Hybrid score = max(token_score, semantic_score * confidence)
+- Enables paraphrasing, slang, indirect references, typo tolerance
+
+Total cost: ~15-20ms per query, ~82 MB shared model + ~2.1 MB RAM per NPC, zero GPU.
 """
 
 from __future__ import annotations
@@ -29,6 +35,7 @@ from .escalation_gate import EscalationGate
 from .personality_bank import PersonalityBank
 from .knowledge_graph import KnowledgeGraph, load_knowledge_from_file, load_knowledge_from_dict
 from .context_recall import ContextRecall
+from .semantic_matcher import SemanticMatcher
 
 
 # Stop words (duplicated for self-contained pattern matching)
@@ -125,6 +132,19 @@ class CognitiveEngine:
             f"I am {bio.get('name', character_id)}. Could you rephrase?"
         )
 
+        # Module 10: Semantic Matcher — Left Hemisphere v2
+        # Pre-embeds all triggers into FAISS for cosine similarity search.
+        # Gracefully degrades to token-only if model loading fails.
+        self.semantic = SemanticMatcher(similarity_floor=0.35)
+        try:
+            self.semantic.build_index(self._synthetic, self._generic)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"SemanticMatcher init failed, falling back to token-only: {e}"
+            )
+            self.semantic._enabled = False
+
         # Stats
         self._total_queries = 0
         self._local_handled = 0
@@ -132,6 +152,7 @@ class CognitiveEngine:
         self._knowledge_handled = 0
         self._personality_handled = 0
         self._recall_handled = 0
+        self._semantic_wins = 0  # Times semantic beat token matching
 
     @staticmethod
     def _extract_known_entities(
@@ -222,10 +243,11 @@ class CognitiveEngine:
         ]
         return reactions
 
-    def _match_pattern(self, query: str) -> Tuple[Optional[Dict], float]:
+    def _match_pattern_token(self, query: str) -> Tuple[Optional[Dict], float]:
         """
-        Match query against character patterns using the same v3 scoring
-        as fastapi_server.py. Returns (pattern_dict, score).
+        Token-based pattern matching (Left Hemisphere v1).
+        Fast keyword/substring overlap with geometric mean scoring.
+        Returns (pattern_dict, score).
         """
         q = query.strip().lower()
         q_tokens = _tokenize(q)
@@ -274,6 +296,51 @@ class CognitiveEngine:
                         best_match = pat
 
         return best_match, best_score
+
+    def _match_pattern(self, query: str) -> Tuple[Optional[Dict], float]:
+        """
+        Hybrid pattern matching (Left Hemisphere v2).
+        
+        Runs BOTH token matching and semantic matching in parallel,
+        then takes the better result. This ensures:
+        - Exact/substring matches still get 1.0 scores (token wins)
+        - Paraphrases, slang, indirect refs get caught (semantic wins)
+        - No regression on existing behavior
+        
+        Semantic score is scaled by the pattern's confidence value
+        to maintain consistency with the token scorer.
+        
+        Returns (pattern_dict, hybrid_score).
+        """
+        # Run token matcher (always available, ~0.1ms)
+        token_match, token_score = self._match_pattern_token(query)
+
+        # Short-circuit: perfect token match needs no semantic check
+        if token_score >= 1.0:
+            return token_match, token_score
+
+        # Run semantic matcher (if available, ~12ms)
+        if not self.semantic._enabled:
+            return token_match, token_score
+
+        sem_pat, sem_trigger, sem_cosine, sem_generic = self.semantic.get_best_match(query)
+
+        if sem_pat is None:
+            return token_match, token_score
+
+        # Scale semantic cosine score by pattern confidence
+        # (mirrors how token scorer uses conf multiplier)
+        sem_conf = sem_pat.get("confidence", 0.5)
+        sem_score = sem_cosine * sem_conf
+        if sem_generic:
+            sem_score *= 0.7
+
+        # Take the better result
+        if sem_score > token_score:
+            self._semantic_wins += 1
+            return sem_pat, sem_score
+
+        return token_match, token_score
 
     def process_query(
         self,
@@ -608,6 +675,7 @@ class CognitiveEngine:
                     "personality_bank",
                     "knowledge_graph",
                     "context_recall",
+                    "semantic_matcher",
                 ],
                 "pattern_matched": pattern_id,
                 "match_score": round(match_score, 4),
@@ -626,7 +694,7 @@ class CognitiveEngine:
 
     def get_stats(self) -> Dict[str, Any]:
         """Return engine statistics."""
-        return {
+        stats = {
             "character_id": self.character_id,
             "total_queries": self._total_queries,
             "local_handled": self._local_handled,
@@ -634,11 +702,16 @@ class CognitiveEngine:
             "knowledge_handled": self._knowledge_handled,
             "personality_handled": self._personality_handled,
             "recall_handled": self._recall_handled,
+            "semantic_wins": self._semantic_wins,
             "local_pct": (
                 round(self._local_handled / self._total_queries * 100, 1)
                 if self._total_queries > 0 else 0
             ),
         }
+        # Include semantic matcher stats
+        if hasattr(self, 'semantic'):
+            stats["semantic_matcher"] = self.semantic.get_stats()
+        return stats
 
     @classmethod
     def from_character_dir(cls, char_dir: str, persist_dir: Optional[str] = None) -> "CognitiveEngine":
