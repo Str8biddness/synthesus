@@ -1,0 +1,27 @@
+{
+  "completed_datasets": [
+    "character_patterns",
+    "takala/financial_phrasebank_sentences_allagree",
+    "openlifescienceai/medmcqa_default",
+    "allenai/ai2_arc_ARC-Easy",
+    "allenai/ai2_arc_ARC-Challenge",
+    "rajpurkar/squad_v2_default",
+    "Rowan/hellaswag_default",
+    "databricks/databricks-dolly-15k_default",
+    "Intel/orca_dpo_pairs_default",
+    "huggingartists/wikipedia_default",
+    "aps/super_glue_boolq",
+    "rajpurkar/squad_default",
+    "truthfulqa/truthful_qa_generation",
+    "allenai/openbookqa_main",
+    "tatsu-lab/alpaca_default",
+    "openai/gsm8k_main",
+    "allenai/sciq_default",
+    "derek-thomas/ScienceQA_default",
+    "tau/commonsense_qa_default",
+    "mandarjoshi/trivia_qa_rc"
+  ],
+  "total_embedded": 78017,
+  "status": "complete",
+  "completed_at": "2026-03-11 07:29:43"
+}
