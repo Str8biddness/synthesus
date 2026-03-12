@@ -37,6 +37,8 @@ from .personality_bank import PersonalityBank
 from .knowledge_graph import KnowledgeGraph, load_knowledge_from_file, load_knowledge_from_dict
 from .context_recall import ContextRecall
 from .semantic_matcher import SemanticMatcher
+from .goal_stack import GoalStack
+from .proactive_engine import ProactiveEngine
 
 
 # Stop words (duplicated for self-contained pattern matching)
@@ -124,6 +126,10 @@ class CognitiveEngine:
 
         # Module 9: Context Recall — NPC references its own prior statements
         self.recall = ContextRecall()
+
+        # Module 14 & 15: Agentic Behavior
+        self.goal_stack = GoalStack()
+        self.proactive_engine = ProactiveEngine()
 
         # Pre-process patterns for fast matching
         self._synthetic = patterns.get("synthetic_patterns", [])
@@ -401,17 +407,40 @@ class CognitiveEngine:
         # ── Step 3: Relationship Tracker ──
         rel_result = self.relationships.process(player_id, keywords)
 
-        # ── Step 4: World State Reactor ──
+        # ── Step 4: World State Reactor & Proactive Engine ──
         world_result = self.world.process()
+
+        # Build global context for proactive/goal evaluation
+        context = {
+            "player_id": player_id,
+            "query": query,
+            "topic": conv_context["active_topic"],
+            "world_flags": world_result.get("active_flags", {}),
+            "relationship": {
+                "trust": rel_result["trust"],
+                "fondness": rel_result["fondness"],
+                "respect": rel_result["respect"],
+                "debt": rel_result["debt"],
+                "tier": next((k for k, v in rel_result["tier"].items() if v), "stranger"),
+                "interactions": rel_result.get("interactions", 0),
+            },
+            "last_interaction_time": self.tracker.get_last_turn_time(player_id),
+        }
+
+        # Check for proactive greeting override (goals/events/time)
+        prefix_greeting = None
+        if not self.goal_stack.get_active_goals(): # Only if no urgent goals blocking
+            prefix_greeting = self.proactive_engine.check(player_id, context)
 
         # Apply world emotion override if set
         if world_result["emotion_override"] is not None:
             current_emotion = world_result["emotion_override"]
             self.emotion.force_state(player_id, current_emotion)
 
-        # Check for greeting override (world events)
-        if conv_context["turn_count"] == 1 and world_result.get("greeting_override"):
-            response = world_result["greeting_override"]
+        # Check for greeting override (world events / proactive)
+        greeting = prefix_greeting or world_result.get("greeting_override")
+        if conv_context["turn_count"] == 1 and greeting:
+            response = greeting
             self.tracker.record_npc_response(player_id, response)
             self.recall.record_response(player_id, response)
             self._local_handled += 1
@@ -661,14 +690,31 @@ class CognitiveEngine:
                 match_score=match_score,
                 pattern_id=None,
                 start_time=start_time,
+                context=context,  # Pass context for goal evaluation
             )
 
     def _build_result(
         self,
         response, source, confidence, emotion, rel_result,
         conv_context, world_result, match_score, pattern_id,
-        start_time, escalation=None,
+        start_time, escalation=None, context=None,
     ) -> Dict[str, Any]:
+        
+        # ── Autonomous Goal Injection (Agentic Layer) ──
+        # If we have a response and a context, check goals
+        if response and context:
+            goal = self.goal_stack.evaluate(
+                current_turn=conv_context["turn_count"], 
+                world_flags=context.get("world_flags", {})
+            )
+            if goal:
+                if goal.goal_type.value == "warn":
+                    response = goal.response_injection
+                else:
+                    # Mention or steer — prepend to response
+                    response = f"{goal.response_injection} {response}"
+                self.goal_stack.mark_mentioned(goal.goal_id, conv_context["turn_count"])
+
         latency = (time.time() - start_time) * 1000
         return {
             "response": response,
@@ -698,6 +744,8 @@ class CognitiveEngine:
                     "knowledge_graph",
                     "context_recall",
                     "semantic_matcher",
+                    "goal_stack",
+                    "proactive_engine",
                 ],
                 "pattern_matched": pattern_id,
                 "match_score": round(match_score, 4),
@@ -734,6 +782,10 @@ class CognitiveEngine:
         # Include semantic matcher stats
         if hasattr(self, 'semantic'):
             stats["semantic_matcher"] = self.semantic.get_stats()
+            
+        stats["goal_stack"] = self.goal_stack.get_stats()
+        stats["proactive_engine"] = self.proactive_engine.get_stats()
+        
         return stats
 
     @classmethod
@@ -758,10 +810,21 @@ class CognitiveEngine:
                 patterns = json.load(f)
 
         char_id = bio.get("id", bio.get("character_id", char_path.name))
-        return cls(
+        
+        engine = cls(
             character_id=char_id,
             bio=bio,
             patterns=patterns,
             persist_dir=persist_dir,
             char_dir=str(char_path),
         )
+        
+        # Load agentic profiles
+        if "goals" in bio:
+            engine.goal_stack.load_from_config(bio["goals"])
+        if "proactive_triggers" in bio:
+            engine.proactive_engine.load_from_config(bio["proactive_triggers"])
+        else:
+            engine.proactive_engine.add_default_triggers()
+            
+        return engine
