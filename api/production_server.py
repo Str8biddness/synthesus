@@ -34,6 +34,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Request, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 import sys
@@ -106,6 +107,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static directory for CSS/JS assets
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # ─── Global State ────────────────────────────────────────────────────
 _rag: Optional[RAGPipeline] = None
@@ -289,7 +293,7 @@ class CharacterInfo(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 async def root():
     """Dashboard UI."""
-    dashboard = STATIC_DIR / "dashboard.html"
+    dashboard = STATIC_DIR / "index.html"
     if dashboard.exists():
         return dashboard.read_text()
     return f"""

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synthesus 2.0 — Visual Cortex</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+
+    <!-- Ambient Background Effects -->
+    <div class="ambient-fx fx-1"></div>
+    <div class="ambient-fx fx-2"></div>
+    <div class="ambient-fx fx-3"></div>
+
+    <div class="app-container">
+        
+        <!-- TOP HEADER -->
+        <header class="top-header glass-panel">
+            <div class="brand">
+                <div class="logo-mark"><i class="fa-solid fa-brain"></i></div>
+                <div class="brand-text">
+                    <h1>SYNTHESUS <span class="version">2.0</span></h1>
+                    <p>AIVM Dual-Hemisphere Cognitive Engine</p>
+                </div>
+            </div>
+            
+            <div class="system-stats">
+                <div class="stat-box">
+                    <span class="stat-label">RAG VECTORS</span>
+                    <span class="stat-value" id="ragCount">--</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">CHARACTERS</span>
+                    <span class="stat-value" id="charCount">--</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">REQUESTS</span>
+                    <span class="stat-value" id="reqCount">--</span>
+                </div>
+                <div class="health-status">
+                    <div class="pulse-ring">
+                        <div class="pulse-dot" id="statusDot"></div>
+                    </div>
+                    <span id="statusText">CONNECTING</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-layout">
+            
+            <!-- LEFT PANEL: ROSTER -->
+            <aside class="left-panel glass-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-users"></i> Neural Roster</h2>
+                </div>
+                <div class="character-list" id="charList">
+                    <!-- Loaded via JS -->
+                    <div class="loading-state"><i class="fa-solid fa-circle-notch fa-spin"></i> Initializing...</div>
+                </div>
+                
+                <div class="panel-footer setting-group">
+                    <label>Processing Hemisphere</label>
+                    <div class="custom-select">
+                        <select id="modeSelect">
+                            <option value="auto">Auto (Full Brain Routing)</option>
+                            <option value="cognitive">Right Hemisphere (Cognitive Only)</option>
+                            <option value="rag">Left Hemisphere (RAG Match Only)</option>
+                        </select>
+                        <i class="fa-solid fa-chevron-down select-icon"></i>
+                    </div>
+                    <button class="btn btn-outline" id="clearBtn"><i class="fa-solid fa-trash-can"></i> Purge Memory</button>
+                </div>
+            </aside>
+
+            <!-- CENTER PANEL: INTERFACE -->
+            <section class="center-panel glass-panel">
+                <div class="chat-header">
+                    <div class="active-char-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="active-char-info">
+                        <h2 id="chatCharName">Select a Target</h2>
+                        <span id="chatCharRole">Awaiting Neural Link</span>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="messages">
+                    <div class="empty-state">
+                        <i class="fa-solid fa-plug"></i>
+                        <p>Link established. Initiate conversation.</p>
+                    </div>
+                </div>
+                
+                <div class="chat-input-area">
+                    <div class="input-wrapper">
+                        <input type="text" id="queryInput" placeholder="Transmit thought sequence..." autocomplete="off">
+                        <button id="sendBtn" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: TELEMETRY -->
+            <aside class="right-panel glass-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-microchip"></i> Brain Telemetry</h2>
+                    <span class="live-badge">LIVE</span>
+                </div>
+                
+                <div class="telemetry-content" id="telemetryContent">
+                    <div class="empty-telemetry">
+                        <i class="fa-solid fa-wave-square"></i>
+                        <p>Awaiting Signal Data...</p>
+                    </div>
+                    <!-- Telemetry Modules will be injected here by JS -->
+                </div>
+            </aside>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
