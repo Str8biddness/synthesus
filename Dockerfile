@@ -20,11 +20,9 @@ COPY README.md ./
 
 # Install runtime deps into a prefix
 RUN pip install --upgrade pip \
-  && pip install --prefix=/install . --no-deps --no-build-isolation || true
-RUN pip install --prefix=/install \
-    fastapi uvicorn[standard] pydantic httpx \
-    faiss-cpu numpy sentence-transformers \
-    openai anthropic \
+  && pip install --prefix=/install \
+    fastapi "uvicorn[standard]" pydantic httpx \
+    faiss-cpu numpy scikit-learn scipy \
     python-dotenv rich tenacity
 
 # ---------------------------------------------------------------------------
@@ -42,9 +40,15 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 
 # Copy source
-COPY api/       ./api/
-COPY core/      ./core/
+COPY api/        ./api/
+COPY core/       ./core/
+COPY cognitive/  ./cognitive/
+COPY ml/         ./ml/
 COPY characters/ ./characters/
+COPY scripts/    ./scripts/
+COPY static/     ./static/
+COPY studio/     ./studio/
+COPY unpc_engine/ ./unpc_engine/
 
 # Create data volume mount point
 RUN mkdir -p /app/data
@@ -55,22 +59,22 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     SYNTHESUS_DATA_DIR=/app/data \
     SYNTHESUS_CHARACTERS_DIR=/app/characters \
-    PORT=8000
+    PORT=5000
 
 # Non-root user for security
 RUN useradd -m -u 1001 synthesus
 RUN chown -R synthesus:synthesus /app
 USER synthesus
 
-EXPOSE 8000
+EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/v1/health')"
 
-# Start FastAPI server
-CMD ["uvicorn", "api.gateway:app", \
+# Start production server
+CMD ["uvicorn", "api.production_server:app", \
      "--host", "0.0.0.0", \
-     "--port", "8000", \
+     "--port", "5000", \
      "--workers", "2", \
      "--log-level", "info"]

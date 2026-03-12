@@ -18,11 +18,20 @@ Cost: ~0.3ms per state transition, ~5 KB RAM per active session, zero GPU.
 
 from __future__ import annotations
 
+import logging
 import re
 import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
+
+logger = logging.getLogger(__name__)
+
+try:
+    from ml.loot_balancer import LootBalancer
+    _HAS_LOOT_BALANCER = True
+except ImportError:
+    _HAS_LOOT_BALANCER = False
 
 
 class NegotiationState(Enum):
@@ -142,19 +151,21 @@ class NegotiationEngine:
         npc_name: str = "",
         inventory: Optional[List[ItemListing]] = None,
         merchant_style: str = "fair",  # fair, shrewd, generous, stubborn
+        loot_balancer: Optional[Any] = None,
     ):
         self.npc_id = npc_id
         self.npc_name = npc_name or npc_id
         self.inventory = inventory or []
         self.merchant_style = merchant_style
         self._sessions: Dict[str, NegotiationSession] = {}
+        self._loot_balancer = loot_balancer
 
         # Style modifiers
         self._style_config = {
-            "fair": {"initial_markup": 1.0, "haggle_step": 0.08, "min_ratio": 0.75, "patience": 3},
-            "shrewd": {"initial_markup": 1.15, "haggle_step": 0.05, "min_ratio": 0.85, "patience": 2},
-            "generous": {"initial_markup": 0.95, "haggle_step": 0.10, "min_ratio": 0.65, "patience": 4},
-            "stubborn": {"initial_markup": 1.1, "haggle_step": 0.03, "min_ratio": 0.90, "patience": 2},
+            "fair": {"initial_markup": 1.0, "haggle_step": 0.08, "min_ratio": 0.75, "patience": 3, "generosity": 0.5},
+            "shrewd": {"initial_markup": 1.15, "haggle_step": 0.05, "min_ratio": 0.85, "patience": 2, "generosity": 0.3},
+            "generous": {"initial_markup": 0.95, "haggle_step": 0.10, "min_ratio": 0.65, "patience": 4, "generosity": 0.7},
+            "stubborn": {"initial_markup": 1.1, "haggle_step": 0.03, "min_ratio": 0.90, "patience": 2, "generosity": 0.2},
         }
 
     def _get_session(self, player_id: str) -> NegotiationSession:
@@ -199,11 +210,21 @@ class NegotiationEngine:
         style = self._style_config.get(self.merchant_style, self._style_config["fair"])
         base = item.base_price * style["initial_markup"]
 
-        # Relationship discount: -1% per trust point above 50, up to -15%
-        trust_discount = max(0, min(0.15, (trust - 50) * 0.003))
-        # Fondness bonus: -1% per fondness above 60, up to -10%
-        fondness_discount = max(0, min(0.10, (fondness - 60) * 0.003))
+        # Use LootBalancer for dynamic pricing if available
+        if self._loot_balancer:
+            loyalty = max(0.0, min(1.0, (trust + fondness) / 200.0))
+            generosity = style.get("generosity", 0.5)
+            result = self._loot_balancer.price_adjustment(
+                base_price=base,
+                loyalty_score=loyalty,
+                merchant_generosity=generosity,
+                is_buying=True,
+            )
+            return max(1, int(result["adjusted_price"]))
 
+        # Fallback: hardcoded discount math
+        trust_discount = max(0, min(0.15, (trust - 50) * 0.003))
+        fondness_discount = max(0, min(0.10, (fondness - 60) * 0.003))
         total_discount = trust_discount + fondness_discount
         return max(1, int(base * (1 - total_discount)))
 

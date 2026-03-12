@@ -1,6 +1,9 @@
 #!/bin/bash
-# download_models.sh - Download required model files for Synthesus 2.0
+# download_models.sh - Download optional model files for Synthesus 2.0
 # Usage: bash download_models.sh
+#
+# NOTE: Synthesus 2.0 does NOT require any large model downloads.
+# The ML Swarm (~458 KB) is built-in. These are OPTIONAL extras.
 
 set -e
 
@@ -12,8 +15,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${GREEN}Synthesus 2.0 Model Downloader${NC}"
-echo "================================"
+echo -e "${GREEN}Synthesus 2.0 — Optional Model Downloader${NC}"
+echo "============================================"
+echo ""
+echo -e "The ML Swarm (intent, sentiment, embeddings, etc.) is built-in."
+echo -e "These downloads are for OPTIONAL features only."
 echo ""
 
 mkdir -p "$MODELS_DIR"
@@ -27,19 +33,7 @@ else
     exit 1
 fi
 
-echo -e "${YELLOW}Downloading TinyLlama GGUF (638 MB)...${NC}"
-TINYLLAMA_URL="https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
-TINYLLAMA_FILE="$MODELS_DIR/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
-
-if [ -f "$TINYLLAMA_FILE" ]; then
-    echo -e "${GREEN}[SKIP] TinyLlama already exists${NC}"
-else
-    $DOWNLOADER "$TINYLLAMA_FILE" "$TINYLLAMA_URL"
-    echo -e "${GREEN}[DONE] TinyLlama downloaded${NC}"
-fi
-
-echo ""
-echo -e "${YELLOW}Downloading Piper TTS voice (~116 MB)...${NC}"
+echo -e "${YELLOW}[1/2] Downloading Piper TTS voice (~116 MB)...${NC}"
 PIPER_BASE="https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high"
 PIPER_ONNX="$MODELS_DIR/en_US-ryan-high.onnx"
 PIPER_JSON="$MODELS_DIR/en_US-ryan-high.onnx.json"
@@ -53,10 +47,9 @@ else
 fi
 
 echo ""
-echo -e "${GREEN}All models downloaded!${NC}"
-echo "  TinyLlama: $TINYLLAMA_FILE"
+echo -e "${GREEN}Done!${NC}"
 echo "  Piper ONNX: $PIPER_ONNX"
 echo ""
 echo -e "${YELLOW}Note: Whisper tiny.en (~75MB) auto-downloads via pywhispercpp on first use.${NC}"
 echo ""
-echo -e "${GREEN}Ready! Run: bash build.sh --rebuild${NC}"
+echo -e "${GREEN}Ready! Run: uvicorn api.production_server:app --port 5000${NC}"

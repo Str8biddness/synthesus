@@ -1,20 +1,21 @@
 """
 Cognitive Engine — The NPC Right Hemisphere
-Orchestrates all 6 cognitive modules into a single NPC brain.
+Orchestrates all 9 cognitive modules into a single NPC brain.
 
 The CognitiveEngine is the main entry point. It:
-1. Takes a player message
-2. Runs it through all 6 modules
+1. Receives ML Swarm signals (intent, sentiment, player emotion)
+2. Runs the query through all 9 cognitive modules
 3. Returns a fully assembled, context-aware response
-4. Reports whether it handled locally or needs the Thinking Layer
+4. Reports whether it handled locally or needs escalation
 
-Left Hemisphere v2: Hybrid token + semantic matching.
-- Token matcher: fast keyword/substring overlap (original v1)
-- Semantic matcher: all-MiniLM-L6-v2 embeddings + FAISS cosine similarity
+Left Hemisphere: Hybrid token + semantic matching.
+- Token matcher: fast keyword/substring overlap
+- Semantic matcher: SwarmEmbedder (TF-IDF + SVD) + FAISS cosine similarity
 - Hybrid score = max(token_score, semantic_score * confidence)
-- Enables paraphrasing, slang, indirect references, typo tolerance
 
-Total cost: ~15-20ms per query, ~82 MB shared model + ~2.1 MB RAM per NPC, zero GPU.
+ML Swarm integration: IntentClassifier, SentimentAnalyzer, EmotionDetector,
+BehaviorPredictor feed signals into emotion state machine, escalation gate,
+and response composition. Total cost: <1ms for ML + ~2-5ms for cognitive.
 """
 
 from __future__ import annotations
@@ -347,39 +348,55 @@ class CognitiveEngine:
         player_id: str,
         query: str,
         thinking_layer_available: bool = False,
+        ml_context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         The main entry point. Process a player query through the full
         cognitive engine pipeline.
 
+        Args:
+            player_id: Unique player identifier
+            query: The player's query text
+            thinking_layer_available: Whether escalation to thinking layer is possible
+            ml_context: Pre-computed ML Swarm signals from the production server:
+                - intent: classified player intent (e.g. "greeting", "shop_buy", "lore")
+                - sentiment: emotional valence ("positive", "negative", "neutral", etc.)
+                - player_emotion: detected emotion ("joy", "anger", "fear", etc.)
+                - emotion_intensity: 0-1 intensity of detected emotion
+                - predicted_action: next likely player action
+                - engagement_score: 0-1 engagement probability
+                - escalation_risk: 0-1 escalation risk score
+
         Returns:
-        {
-            "response": str,
-            "source": "cognitive_engine" | "escalated" | "fallback",
-            "confidence": float,
-            "emotion": str,
-            "relationship": dict,
-            "escalation": dict or None,
-            "debug": {
-                "modules_active": list,
-                "pattern_matched": str or None,
-                "match_score": float,
-                "topic": str,
-                "world_flags": dict,
-                "latency_ms": float,
-            }
-        }
+            Dict with response, confidence, emotion, relationship, debug info.
         """
         start_time = time.time()
         self._total_queries += 1
+        ml_context = ml_context or {}
 
         # ── Step 1: Conversation Tracker ──
         conv_context = self.tracker.process(player_id, query)
         keywords = conv_context["keywords"]
 
         # ── Step 2: Emotion State Machine ──
+        # Feed ML-detected player emotion into the NPC's emotional response
         emotion_result = self.emotion.process(player_id, keywords)
         current_emotion = emotion_result["emotion"]
+
+        # If ML Swarm detected strong player emotion, influence NPC reaction
+        if ml_context.get("emotion_intensity", 0) > 0.5:
+            player_emo = ml_context.get("player_emotion", "neutral")
+            # Threatening players make NPC suspicious/afraid
+            if player_emo in ("anger", "disgust"):
+                from .emotion_state_machine import EmotionState
+                if hasattr(EmotionState, 'SUSPICIOUS'):
+                    self.emotion.force_state(player_id, EmotionState.SUSPICIOUS)
+                    current_emotion = EmotionState.SUSPICIOUS
+            elif player_emo == "fear":
+                from .emotion_state_machine import EmotionState
+                if hasattr(EmotionState, 'CONCERNED'):
+                    self.emotion.force_state(player_id, EmotionState.CONCERNED)
+                    current_emotion = EmotionState.CONCERNED
 
         # ── Step 3: Relationship Tracker ──
         rel_result = self.relationships.process(player_id, keywords)
@@ -466,6 +483,11 @@ class CognitiveEngine:
             query_text=query,
         )
 
+        # Boost escalation if ML Swarm detected high escalation risk
+        ml_escalation_risk = ml_context.get("escalation_risk", 0)
+        if ml_escalation_risk > 0.5:
+            escalation.total_score = min(escalation.total_score + ml_escalation_risk * 0.3, 1.0)
+
         # ── Decision: Local or Escalate? ──
         if matched_pattern and match_score >= 0.55:
             # Local handling via cognitive engine
@@ -503,10 +525,10 @@ class CognitiveEngine:
             )
 
         elif escalation.should_escalate and thinking_layer_available:
-            # Escalate to Thinking Layer (SLM)
+            # Escalate to thinking layer
             self._escalated += 1
             return self._build_result(
-                response=None,  # Caller must fill from SLM
+                response=None,  # Caller must fill via deeper processing
                 source="escalated",
                 confidence=match_score,
                 emotion=current_emotion,
@@ -614,7 +636,7 @@ class CognitiveEngine:
 
             # ── All 3 modules missed → Original fallback ──
             if escalation.should_escalate:
-                # SLM unavailable, use stall response
+                # Use stall response
                 response = escalation.fallback_response or self._fallback_text
             else:
                 response = self._fallback_text
@@ -689,6 +711,7 @@ class CognitiveEngine:
                 "pronoun_resolution": conv_context.get("pronoun_resolution"),
                 "world_flags": world_result.get("active_flags", {}),
                 "latency_ms": round(latency, 2),
+                "ml_context": ml_context if ml_context else None,
             },
         }
 

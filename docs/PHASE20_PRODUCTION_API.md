@@ -22,7 +22,7 @@ Client Request
           │ (miss)
           ▼
 ┌─────────────────────┐
-│  FAISS RAG Pipeline  │  78K+ vectors, all-MiniLM-L6-v2 embeddings
+│  FAISS RAG Pipeline  │  78K+ vectors, SwarmEmbedder (TF-IDF + SVD) embeddings
 │  (score ≥ 0.65)     │  → 30-65ms latency
 └─────────┬───────────┘
           │ (miss)

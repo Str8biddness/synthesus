@@ -1,30 +1,39 @@
 # models/
 
-This directory holds large model files required for full Synthesus 2.0 capability.
+This directory holds optional model files for Synthesus 2.0.
 These are NOT committed to the repo due to file size.
 
-## Required model files
+**Note:** Synthesus does NOT require any large language models.
+The ML Swarm (~458 KB total) is built into the `ml/` directory and runs at <1ms on CPU.
+The files below are for **optional** features only.
+
+## Optional model files
 
 | File | Size | Purpose | Download |
 |------|------|---------|----------|
-| `tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf` | ~638 MB | Right hemisphere SLM (llama-cpp) | [TheBloke/TinyLlama HuggingFace](https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF) |
 | `en_US-ryan-high.onnx` | ~116 MB | Piper TTS voice | [rhasspy/piper-voices](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/ryan/high) |
 | `en_US-ryan-high.onnx.json` | ~4 KB | Piper TTS config | Same as above |
 
 ## Quick download
 
 ```bash
-# TinyLlama GGUF
-wget -P models/ https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
-
-# Piper TTS voice
+# Piper TTS voice (optional)
 wget -P models/ https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx
 wget -P models/ https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json
 ```
 
+Or use the downloader script:
+
+```bash
+bash download_models.sh
+```
+
 ## Running without models
 
-Synthesus 2.0 runs in degraded mode without these files:
-- **No TinyLlama**: Right hemisphere returns stub responses (Python fallback active)
-- **No Piper TTS**: Speech output disabled
-- All reasoning modules (SINN, PPBRS, Bayesian, etc.) still fully functional
+All core Synthesus features work without any model downloads:
+- **Left Hemisphere**: Pattern matching, confidence scoring, fallback cascades
+- **Right Hemisphere**: All 9 cognitive modules (emotion, relationships, personality, etc.)
+- **ML Swarm**: All 7 micro-models built-in (~458 KB)
+- **RAG Pipeline**: FAISS semantic retrieval (78K+ patterns)
+
+Only **text-to-speech** (Piper TTS) and **speech-to-text** (Whisper) require external models.

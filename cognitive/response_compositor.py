@@ -6,16 +6,22 @@ Instead of returning a single static template, assembles responses from
 modular PARTS based on context. This is the key to making 30 patterns
 feel like 300.
 
-Cost: ~0.2ms per query (string assembly)
+When a DialogueRanker is available, generates multiple candidate responses
+and ranks them by relevance, personality fit, flow, and variety.
+
+Cost: ~0.2ms per query (string assembly), ~0.5ms with ranking
 """
 
 from __future__ import annotations
 
+import logging
 import random
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from .emotion_state_machine import EmotionState
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -33,13 +39,16 @@ class ResponseCompositor:
     """
     Module 3 of the Cognitive Engine.
     Assembles varied, context-aware responses from modular parts.
+    Optionally uses DialogueRanker to pick the best candidate.
     """
 
-    def __init__(self):
+    def __init__(self, dialogue_ranker=None):
         self._rng = random.Random()
+        self._dialogue_ranker = dialogue_ranker
         # Track what we've said recently to avoid repetition
         self._recent_openers: Dict[str, List[str]] = {}  # player_id → last N openers used
         self._recent_closers: Dict[str, List[str]] = {}
+        self._recent_responses: Dict[str, List[str]] = {}  # player_id → last N full responses
         self._max_recent = 3
 
     def compose(
@@ -71,6 +80,12 @@ class ResponseCompositor:
         emotion_key = emotion.value
         if emotion_key in emotion_variants and emotion != EmotionState.NEUTRAL:
             return emotion_variants[emotion_key]
+
+        # If DialogueRanker is available and pattern has parts, use ranked composition
+        if self._dialogue_ranker and "response_parts" in pattern:
+            ranked = self._compose_ranked(pattern, context, player_id)
+            if ranked:
+                return ranked
 
         # Check if this pattern uses composite format
         if "response_parts" in pattern:
@@ -132,7 +147,79 @@ class ResponseCompositor:
             segments.append(closer)
             self._track_recent(player_id, closer, self._recent_closers)
 
-        return " ".join(s.strip() for s in segments if s.strip())
+        response = " ".join(s.strip() for s in segments if s.strip())
+
+        # Track full response for variety scoring
+        self._track_recent(player_id, response, self._recent_responses)
+
+        return response
+
+    def _compose_ranked(
+        self,
+        pattern: Dict[str, Any],
+        context: Dict[str, Any],
+        player_id: str,
+        n_candidates: int = 3,
+    ) -> Optional[str]:
+        """
+        Generate multiple candidate responses and rank them via DialogueRanker.
+        Returns the highest-scored candidate, or None if ranking fails.
+        """
+        if not self._dialogue_ranker:
+            return None
+
+        parts = pattern["response_parts"]
+        openers = parts.get("opener", [])
+        closers = parts.get("closer", [])
+        details = parts.get("detail", [])
+        body = parts.get("body", "")
+
+        if not body:
+            return None
+
+        # Generate N variant candidates by shuffling openers/closers/details
+        candidates = []
+        for _ in range(n_candidates):
+            segs = []
+            if openers:
+                segs.append(self._rng.choice(openers))
+            segs.append(body)
+            if details and self._rng.random() > 0.4:
+                segs.append(self._rng.choice(details))
+            price = parts.get("price", "")
+            if price:
+                segs.append(price)
+            if closers:
+                segs.append(self._rng.choice(closers))
+            candidates.append(" ".join(s.strip() for s in segs if s.strip()))
+
+        if not candidates:
+            return None
+
+        # Build personality traits from context
+        personality = {}
+        if context.get("emotion"):
+            emo = context["emotion"]
+            if hasattr(emo, 'value'):
+                emo = emo.value
+            personality["friendliness"] = 0.8 if emo in ("friendly", "grateful", "happy") else 0.4
+
+        # Get recent responses for variety scoring
+        recent = self._recent_responses.get(player_id, [])
+
+        ranked = self._dialogue_ranker.rank(
+            candidates=candidates,
+            query=context.get("query", ""),
+            personality=personality,
+            recent_responses=recent,
+        )
+
+        if ranked:
+            best = ranked[0][0]
+            self._track_recent(player_id, best, self._recent_responses)
+            return best
+
+        return None
 
     def _apply_context_inserts(
         self,

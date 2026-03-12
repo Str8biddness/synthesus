@@ -20,14 +20,11 @@ dependencies = [
   "pydantic>=2.7.0",
   "httpx>=0.27.0",
 
-  # RAG / Embeddings
+  # RAG / Embeddings (SwarmEmbedder: TF-IDF + SVD, no PyTorch needed)
   "faiss-cpu>=1.8.0",
   "numpy>=1.26.0",
-  "sentence-transformers>=3.0.0",
-
-  # LLM clients
-  "openai>=1.30.0",
-  "anthropic>=0.28.0",
+  "scikit-learn>=1.4.0",
+  "scipy>=1.12.0",
 
   # Utilities
   "python-dotenv>=1.0.0",

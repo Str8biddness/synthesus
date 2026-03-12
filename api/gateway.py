@@ -4,9 +4,9 @@ Synthesus 2.0 API Gateway
 AIVM LLC - Dual-Hemisphere Synthetic Intelligence
 
 Routes queries to the appropriate hemisphere:
- - Left Hemisphere: C++ PPBRS kernel (pattern matching, logic, planning)
- - Right Hemisphere: ML Swarm micro-models (optional SLM for generative tasks)
- - Metacognition: Agreement tracking, confidence calibration
+ - Left Hemisphere: C++ PPBRS kernel (pattern matching, confidence scoring)
+ - Right Hemisphere: 9 Cognitive modules (emotion, relationships, personality...)
+ - ML Swarm: 7 specialized micro-models (~458 KB total, <1ms inference)
 """
 
 import asyncio
@@ -121,11 +121,9 @@ async def verify_api_key(x_api_key: str = Header(...)):
 async def health_check():
     """API health check endpoint."""
     kernel_status = bridge.ping_kernel()
-    slm_status = bridge.ping_slm()
     return {
         "status": "operational",
         "kernel": "up" if kernel_status else "down",
-        "slm": "up" if slm_status else "down",
         "rag_vectors": rag.total_vectors,
         "version": "2.0.0"
     }
