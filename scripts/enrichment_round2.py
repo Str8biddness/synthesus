@@ -8,7 +8,8 @@ import json, logging, os, sys, time
 from pathlib import Path
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from ml.swarm_embedder import SwarmEmbedder
 from datasets import load_dataset
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
@@ -97,8 +98,8 @@ def extract(name, config, split, qk, ak, maxr):
         return []
 
 def main():
-    logger.info("Loading embedding model...")
-    embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    logger.info("Loading SwarmEmbedder...")
+    embedder = SwarmEmbedder(dim=128)
     
     logger.info(f"Loading existing index from {INDEX}...")
     index = faiss.read_index(str(INDEX))
@@ -119,7 +120,10 @@ def main():
         if pats:
             for i in range(0, len(pats), 512):
                 batch = pats[i:i+512]
-                embs = embedder.encode([p["pattern"] for p in batch], normalize_embeddings=True, batch_size=64)
+                texts = [p["pattern"] for p in batch]
+                if not embedder.is_fitted:
+                    embedder.fit(texts)
+                embs = embedder.embed_texts(texts)
                 index.add(embs.astype(np.float32))
                 metadata.extend(batch)
             added_total += len(pats)

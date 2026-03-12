@@ -4,7 +4,7 @@ Synthesus 2.0 — Embedding Migration Pipeline
 AIVM LLC
 
 Downloads HuggingFace datasets, extracts Q/A patterns, embeds them with
-all-MiniLM-L6-v2, and builds a FAISS IndexFlatIP for semantic retrieval.
+SwarmEmbedder (TF-IDF + SVD), and builds a FAISS IndexFlatIP for semantic retrieval.
 
 Optimized for 2-CPU / 8GB RAM sandbox:
   - Streams datasets (no full download)
@@ -45,7 +45,7 @@ METADATA_PATH = DATA_DIR / "faiss_metadata.json"
 CHECKPOINT_PATH = DATA_DIR / "migration_checkpoint.json"
 ENRICHMENT_DIR = DATA_DIR / "enrichment"
 
-EMBEDDING_DIM = 384  # all-MiniLM-L6-v2 output dimension
+EMBEDDING_DIM = 128  # SwarmEmbedder output dimension
 BATCH_SIZE = 512
 SAVE_EVERY = 10_000  # Save index every N patterns
 
@@ -262,10 +262,11 @@ def run_pipeline():
     logger.info("=" * 60)
     
     # ── Step 1: Load embedding model ──
-    logger.info("Loading embedding model (all-MiniLM-L6-v2)...")
-    from sentence_transformers import SentenceTransformer
-    embedder = SentenceTransformer("all-MiniLM-L6-v2")
-    logger.info("Embedding model loaded.")
+    logger.info("Loading SwarmEmbedder...")
+    sys.path.insert(0, str(PROJ_ROOT))
+    from ml.swarm_embedder import SwarmEmbedder
+    embedder = SwarmEmbedder(dim=EMBEDDING_DIM)
+    logger.info("SwarmEmbedder ready.")
     
     # ── Step 2: Load or create FAISS index ──
     if INDEX_PATH.exists() and checkpoint.get("total_embedded", 0) > 0:
@@ -274,7 +275,7 @@ def run_pipeline():
         with open(METADATA_PATH) as f:
             metadata = json.load(f)
     else:
-        logger.info("Creating fresh FAISS index (384-dim, inner product / cosine sim)")
+        logger.info(f"Creating fresh FAISS index ({EMBEDDING_DIM}-dim, inner product / cosine sim)")
         index = faiss.IndexFlatIP(EMBEDDING_DIM)
         metadata = []
     
@@ -287,7 +288,9 @@ def run_pipeline():
         char_patterns = load_character_patterns()
         if char_patterns:
             texts = [p["pattern"] for p in char_patterns]
-            embeddings = embedder.encode(texts, normalize_embeddings=True, batch_size=64, show_progress_bar=True)
+            if not embedder.is_fitted:
+                embedder.fit(texts)
+            embeddings = embedder.embed_texts(texts)
             index.add(embeddings.astype(np.float32))
             metadata.extend(char_patterns)
             logger.info(f"Added {len(char_patterns)} character patterns")
@@ -318,10 +321,9 @@ def run_pipeline():
             for i in range(0, len(patterns), BATCH_SIZE):
                 batch = patterns[i:i + BATCH_SIZE]
                 texts = [p["pattern"] for p in batch]
-                embeddings = embedder.encode(
-                    texts, normalize_embeddings=True,
-                    batch_size=64, show_progress_bar=False
-                )
+                if not embedder.is_fitted:
+                    embedder.fit(texts)
+                embeddings = embedder.embed_texts(texts)
                 index.add(embeddings.astype(np.float32))
                 metadata.extend(batch)
             

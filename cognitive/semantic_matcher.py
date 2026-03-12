@@ -2,7 +2,7 @@
 Semantic Matcher — Left Hemisphere Upgrade
 
 Replaces keyword/token overlap with semantic embedding-based matching.
-Uses all-MiniLM-L6-v2 (~80MB, 384-dim) + FAISS IndexFlatIP for 
+Uses SwarmEmbedder (TF-IDF + SVD, ~128-dim) + FAISS IndexFlatIP for
 sub-millisecond cosine similarity lookup against all pattern triggers.
 
 This lets NPCs understand:
@@ -12,12 +12,12 @@ This lets NPCs understand:
 - Typos/variations: "whats ur name" ≈ "what is your name?"
 
 Architecture:
-1. At init: embed all triggers → FAISS index (one-time, ~50ms per 100 triggers)
+1. At init: embed all triggers → FAISS index (one-time, <10ms per 100 triggers)
 2. At query: embed query → FAISS search → top-K candidates with scores
 3. Caller blends semantic score with existing token score for hybrid matching
 
-Memory: ~80MB model + ~1KB per 100 triggers (negligible index)
-Latency: ~5-15ms per query on CPU (model encode dominates)
+Memory: ~50 KB fitted model + ~1KB per 100 triggers (negligible index)
+Latency: <1ms per query on CPU (TF-IDF + SVD is near-instant)
 """
 
 from __future__ import annotations
@@ -30,21 +30,21 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# Lazy-loaded globals (shared across all NPC instances)
-_model = None
-_model_load_time = 0.0
+# Lazy-loaded global (shared across all NPC instances)
+_embedder = None
+_embedder_load_time = 0.0
 
 
-def _get_model():
-    """Lazy-load the sentence transformer model (shared singleton)."""
-    global _model, _model_load_time
-    if _model is None:
+def _get_embedder():
+    """Lazy-load the SwarmEmbedder (shared singleton)."""
+    global _embedder, _embedder_load_time
+    if _embedder is None:
         start = time.time()
-        from sentence_transformers import SentenceTransformer
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
-        _model_load_time = (time.time() - start) * 1000
-        logger.info(f"SemanticMatcher: loaded all-MiniLM-L6-v2 in {_model_load_time:.0f}ms")
-    return _model
+        from ml.swarm_embedder import SwarmEmbedder
+        _embedder = SwarmEmbedder(dim=128)
+        _embedder_load_time = (time.time() - start) * 1000
+        logger.info(f"SemanticMatcher: SwarmEmbedder ready in {_embedder_load_time:.0f}ms")
+    return _embedder
 
 
 class SemanticMatcher:
@@ -58,13 +58,14 @@ class SemanticMatcher:
         # → [(pattern_dict, trigger_text, cosine_score), ...]
     """
 
-    def __init__(self, similarity_floor: float = 0.35):
+    def __init__(self, similarity_floor: float = 0.25):
         """
         Args:
             similarity_floor: Minimum cosine similarity to return a match.
                               Below this, we treat it as "no semantic match".
-                              0.35 is intentionally low — the hybrid scorer
-                              handles final thresholding.
+                              0.25 is intentionally low — the hybrid scorer
+                              handles final thresholding.  TF-IDF char n-gram
+                              scores tend to be lower than neural embeddings.
         """
         self.similarity_floor = similarity_floor
         self._index = None            # FAISS IndexFlatIP
@@ -84,12 +85,12 @@ class SemanticMatcher:
         Pre-embed all triggers and build the FAISS index.
         
         Called once at CognitiveEngine.__init__. Typically 20-200 triggers,
-        so this takes ~50-500ms on CPU.
+        so this takes <10ms on CPU with SwarmEmbedder.
         """
         import faiss
 
         start = time.time()
-        model = _get_model()
+        embedder = _get_embedder()
 
         # Collect all (trigger_text, pattern_dict, is_generic) triples
         trigger_data = []
@@ -118,17 +119,15 @@ class SemanticMatcher:
         self._trigger_is_generic = [td[2] for td in trigger_data]
         self._n_triggers = len(trigger_data)
 
-        # Encode all triggers
-        embeddings = model.encode(
-            self._trigger_texts,
-            normalize_embeddings=True,  # L2-normalize for cosine similarity
-            show_progress_bar=False,
-            batch_size=64,
-        )
+        # Fit the embedder on the trigger corpus, then encode
+        if not embedder.is_fitted:
+            embedder.fit(self._trigger_texts)
+
+        embeddings = embedder.embed_texts(self._trigger_texts)
         embeddings = np.array(embeddings, dtype=np.float32)
 
         # Build FAISS inner-product index (cosine sim on normalized vectors)
-        dim = embeddings.shape[1]  # 384 for MiniLM
+        dim = embeddings.shape[1]
         self._index = faiss.IndexFlatIP(dim)
         self._index.add(embeddings)
 
@@ -153,14 +152,10 @@ class SemanticMatcher:
         if not self._enabled or self._index is None:
             return []
 
-        model = _get_model()
+        embedder = _get_embedder()
 
         # Encode query
-        q_emb = model.encode(
-            [query],
-            normalize_embeddings=True,
-            show_progress_bar=False,
-        )
+        q_emb = embedder.embed_texts([query])
         q_emb = np.array(q_emb, dtype=np.float32)
 
         # Search FAISS
@@ -200,14 +195,15 @@ class SemanticMatcher:
 
     def get_stats(self) -> Dict[str, Any]:
         """Return matcher statistics."""
+        dim = self._index.d if self._index else 128
         return {
             "enabled": self._enabled,
             "n_triggers": self._n_triggers,
             "build_time_ms": round(self._build_time_ms, 1),
-            "model_load_time_ms": round(_model_load_time, 1),
+            "model_load_time_ms": round(_embedder_load_time, 1),
             "similarity_floor": self.similarity_floor,
             "index_memory_kb": (
-                self._n_triggers * 384 * 4 / 1024  # float32 vectors
+                self._n_triggers * dim * 4 / 1024  # float32 vectors
                 if self._enabled else 0
             ),
         }

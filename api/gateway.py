@@ -5,7 +5,7 @@ AIVM LLC - Dual-Hemisphere Synthetic Intelligence
 
 Routes queries to the appropriate hemisphere:
  - Left Hemisphere: C++ PPBRS kernel (pattern matching, logic, planning)
- - Right Hemisphere: SLM (Qwen3-0.6B -> Phi-4-mini, generative tasks)
+ - Right Hemisphere: ML Swarm micro-models (optional SLM for generative tasks)
  - Metacognition: Agreement tracking, confidence calibration
 """
 
@@ -14,19 +14,60 @@ import json
 import logging
 import subprocess
 import time
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Dict, Any, List
 
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from synthesus.core.hemisphere_bridge import HemisphereBridge
-from synthesus.core.rag_pipeline import RAGPipeline
-from synthesus.characters.character_loader import CharacterLoader
-from synthesus.metacognition.confidence import ConfidenceCalibrator
+# ─── Fixed imports: use repo-root-relative paths, not synthesus.* package ───
+from core.hemisphere_bridge import HemisphereBridge
+from core.rag_pipeline import RAGPipeline
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# ─── Inline stubs for modules that don't exist in the repo yet ───────────────
+class CharacterLoader:
+    """Stub: loads character genomes from characters/ directory."""
+
+    def __init__(self, characters_dir: str = "./characters"):
+        self._dir = Path(characters_dir)
+
+    def load(self, character_id: str) -> Optional[Dict[str, Any]]:
+        char_path = self._dir / character_id / "bio.json"
+        if char_path.exists():
+            with open(char_path) as f:
+                return json.load(f)
+        return None
+
+    def list_all(self) -> List[Dict[str, str]]:
+        results = []
+        if self._dir.exists():
+            for entry in sorted(self._dir.iterdir()):
+                bio = entry / "bio.json"
+                if entry.is_dir() and bio.exists():
+                    results.append({"id": entry.name, "path": str(entry)})
+        return results
+
+
+class ConfidenceCalibrator:
+    """Stub: pass-through confidence calibrator."""
+
+    def calibrate(
+        self,
+        raw_confidence: float,
+        hemisphere_used: str,
+        agreement_score: Optional[float] = None,
+    ) -> float:
+        if agreement_score is not None and agreement_score > 0.6:
+            return min(raw_confidence * 1.1, 1.0)
+        return raw_confidence
+
+
+# ─── FastAPI app ─────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="Synthesus 2.0 API",
@@ -42,7 +83,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global instances
+# Global instances (lazy-init safe — hemisphere_bridge handles missing deps)
 bridge = HemisphereBridge()
 rag = RAGPipeline()
 character_loader = CharacterLoader()
@@ -85,6 +126,7 @@ async def health_check():
         "status": "operational",
         "kernel": "up" if kernel_status else "down",
         "slm": "up" if slm_status else "down",
+        "rag_vectors": rag.total_vectors,
         "version": "2.0.0"
     }
 
@@ -159,7 +201,7 @@ async def get_character(
     character = character_loader.load(character_id)
     if not character:
         raise HTTPException(status_code=404, detail=f"Character '{character_id}' not found")
-    return character.get_manifest()
+    return character
 
 
 @app.get("/kernel/status")
@@ -170,4 +212,4 @@ async def kernel_status(api_key: str = Depends(verify_api_key)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=5000, log_level="info")

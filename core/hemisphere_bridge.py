@@ -18,7 +18,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Dict, Any
 
-from llama_cpp import Llama
+try:
+    from llama_cpp import Llama
+except ImportError:
+    Llama = None
 
 logger = logging.getLogger(__name__)
 
@@ -69,15 +72,23 @@ class HemisphereBridge:
         self._agreement_count = 0
         self._agreement_sum = 0.0
 
-        # Initialize SLM
-        logger.info(f"Loading SLM from {slm_model_path}...")
-        self.slm = Llama(
-            model_path=slm_model_path,
-            n_ctx=slm_n_ctx,
-            n_threads=slm_n_threads,
-            verbose=False
-        )
-        logger.info("SLM loaded.")
+        # Initialize SLM (optional — llama-cpp-python may not be installed)
+        self.slm = None
+        if Llama is not None:
+            try:
+                logger.info(f"Loading SLM from {slm_model_path}...")
+                self.slm = Llama(
+                    model_path=slm_model_path,
+                    n_ctx=slm_n_ctx,
+                    n_threads=slm_n_threads,
+                    verbose=False
+                )
+                logger.info("SLM loaded.")
+            except Exception as e:
+                logger.warning(f"SLM failed to load (non-fatal): {e}")
+                self.slm = None
+        else:
+            logger.warning("llama-cpp-python not installed — right hemisphere SLM disabled.")
 
         # Kernel process (persistent pipe)
         self._kernel_proc: Optional[subprocess.Popen] = None

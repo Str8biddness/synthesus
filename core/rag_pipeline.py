@@ -8,6 +8,9 @@ Implements the Synthetic RAG Reasoning System from DeepSeek design:
 - Character-aware context injection
 - Batched embedding with sleep intervals (CPU-safe)
 - Checkpoint-based migration (34% @ 290K patterns resume point)
+
+Embedding provided by SwarmEmbedder (lightweight TF-IDF + SVD),
+no sentence-transformers or PyTorch required.
 """
 
 import asyncio
@@ -20,7 +23,8 @@ from typing import Optional, List, Dict, Any, Tuple
 
 import faiss
 import numpy as np
-from sentence_transformers import SentenceTransformer
+
+from ml.swarm_embedder import SwarmEmbedder
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +40,12 @@ class RAGPipeline:
         self,
         index_path: str = "./data/faiss.index",
         metadata_path: str = "./data/faiss_metadata.json",
-        embedding_model: str = "all-MiniLM-L6-v2",
+        model_dir: str | None = None,
         top_k: int = 5,
-        score_threshold: float = 0.6,
+        score_threshold: float = 0.4,
         batch_size: int = 256,
         batch_sleep_s: float = 0.5,
+        embedding_dim: int = 128,
     ):
         self.index_path = Path(index_path)
         self.metadata_path = Path(metadata_path)
@@ -48,21 +53,22 @@ class RAGPipeline:
         self.score_threshold = score_threshold
         self.batch_size = batch_size
         self.batch_sleep_s = batch_sleep_s
+        self.embedding_dim = embedding_dim
 
         self._index: Optional[faiss.Index] = None
         self._metadata: List[Dict] = []
-        self._embedder: Optional[SentenceTransformer] = None
+        self._embedder: Optional[SwarmEmbedder] = None
 
         self._load()
 
     def _load(self):
-        """Load FAISS index and metadata from disk."""
-        logger.info("Loading RAG embedding model...")
+        """Load SwarmEmbedder, FAISS index, and metadata from disk."""
+        logger.info("Loading SwarmEmbedder...")
         try:
-            self._embedder = SentenceTransformer("all-MiniLM-L6-v2")
-            logger.info("Embedding model loaded.")
+            self._embedder = SwarmEmbedder(dim=self.embedding_dim)
+            logger.info("SwarmEmbedder ready (lazy-fit on first corpus).")
         except Exception as e:
-            logger.error(f"Failed to load embedding model: {e}")
+            logger.error(f"Failed to init SwarmEmbedder: {e}")
             return
 
         if self.index_path.exists():
@@ -71,7 +77,7 @@ class RAGPipeline:
             logger.info(f"FAISS index loaded: {self._index.ntotal} vectors")
         else:
             logger.warning(f"FAISS index not found at {self.index_path}. Starting empty.")
-            self._index = faiss.IndexFlatIP(384)  # Inner product for cosine sim
+            self._index = faiss.IndexFlatIP(self.embedding_dim)
 
         if self.metadata_path.exists():
             with open(self.metadata_path, "r") as f:
@@ -83,13 +89,7 @@ class RAGPipeline:
 
     def _embed(self, texts: List[str]) -> np.ndarray:
         """Generate normalized embeddings for a list of texts."""
-        embeddings = self._embedder.encode(
-            texts,
-            normalize_embeddings=True,
-            batch_size=64,
-            show_progress_bar=False
-        )
-        return embeddings.astype(np.float32)
+        return self._embedder.embed_texts(texts)
 
     async def retrieve(
         self,
@@ -176,6 +176,15 @@ class RAGPipeline:
                 start_idx = cp.get("last_batch_end", 0)
                 logger.info(f"Resuming from checkpoint: {start_idx}/{total}")
 
+        # Pre-fit embedder on the full corpus so TF-IDF vocabulary is complete
+        all_texts = [p.get("pattern", "") for p in patterns]
+        if not self._embedder.is_fitted:
+            self._embedder.fit(all_texts)
+
+        # Rebuild FAISS index with correct dimension after fitting
+        if self._index is None or self._index.d != self._embedder.dim:
+            self._index = faiss.IndexFlatIP(self._embedder.dim)
+
         for batch_start in range(start_idx, total, self.batch_size):
             batch_end = min(batch_start + self.batch_size, total)
             batch = patterns[batch_start:batch_end]
@@ -222,5 +231,7 @@ class RAGPipeline:
             "metadata_entries": len(self._metadata),
             "index_path": str(self.index_path),
             "top_k": self.top_k,
-            "score_threshold": self.score_threshold
+            "score_threshold": self.score_threshold,
+            "embedding_dim": self.embedding_dim,
+            "embedder_fitted": self._embedder.is_fitted if self._embedder else False,
         }

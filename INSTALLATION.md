@@ -4,39 +4,41 @@
 
 | Requirement | Version | Purpose |
 |---|---|---|
-| g++ | 13+ | C++ kernel compiler |
 | Python | 3.11+ | API server & modules |
+| g++ | 13+ | C++ kernel compiler (optional) |
 | SQLite3 | any | Context memory database |
-| make | any | Build orchestration |
 
 ## Quick Start (CPU-only, 3 steps)
 
 ```bash
-# 1. Install Python dependencies
-pip install fastapi "uvicorn[standard]" sse-starlette python-multipart httpx pydantic svgwrite
+# 1. Clone and create venv
+git clone https://github.com/Str8biddness/synthesus.git
+cd synthesus
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# 2. Download required model files
-bash download_models.sh
+# 2. Install Python dependencies (no Torch, no sentence-transformers!)
+pip install fastapi "uvicorn[standard]" sse-starlette python-multipart httpx pydantic svgwrite numpy scipy scikit-learn faiss-cpu
 
-# 3. Build and run
-bash build.sh --rebuild
+# 3. Run the API server
+uvicorn api.gateway:app --host 0.0.0.0 --port 5000
 ```
 
-Then open: **http://localhost:5000/dashboard**
+Then check: **http://localhost:5000/health**
 
 ---
 
 ## Full Installation
 
-### Step 1: System Dependencies
+### Step 1: System Dependencies (Linux only)
 
-**Linux (Ubuntu/Debian):**
+**Ubuntu/Debian:**
 ```bash
 sudo apt-get update && sudo apt-get install -y \
   build-essential g++ libsqlite3-dev python3 python3-pip
 ```
 
-**Linux (Fedora/RHEL):**
+**Fedora/RHEL:**
 ```bash
 sudo dnf install -y gcc-c++ sqlite-devel python3 python3-pip
 ```
@@ -44,13 +46,17 @@ sudo dnf install -y gcc-c++ sqlite-devel python3 python3-pip
 ### Step 2: Python Requirements (Required)
 
 ```bash
-pip install fastapi "uvicorn[standard]" sse-starlette python-multipart httpx pydantic svgwrite
+pip install fastapi "uvicorn[standard]" sse-starlette python-multipart httpx pydantic svgwrite numpy scipy scikit-learn faiss-cpu
 ```
 
-### Step 3: Python Requirements (Optional - Full Capability)
+All embedding is handled by the built-in **SwarmEmbedder** (`ml/swarm_embedder.py`),
+which uses scikit-learn's TF-IDF + TruncatedSVD pipeline. No PyTorch, no HuggingFace
+Transformers, no sentence-transformers needed.
+
+### Step 3: Python Requirements (Optional — Full Capability)
 
 ```bash
-# Right hemisphere SLM (TinyLlama)
+# Right hemisphere SLM (TinyLlama / Qwen GGUF — optional)
 pip install llama-cpp-python
 
 # Text-to-speech
@@ -58,37 +64,22 @@ pip install piper-tts
 
 # Speech-to-text
 pip install pywhispercpp
+
+# Model persistence (save/load fitted SwarmEmbedder)
+pip install joblib
 ```
 
-### Step 4: Download Model Files
+### Step 4: Download Model Files (Optional)
+
+Only needed if you want the right-hemisphere SLM (TinyLlama / Qwen):
 
 ```bash
-# Automated download (recommended)
 bash download_models.sh
-
-# Manual download locations:
-# TinyLlama GGUF (638 MB) -> models/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf
-#   https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF
-# Piper voice files (~116 MB) -> models/en_US-ryan-high.onnx + .json
-#   https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/ryan/high
 ```
 
-### Step 5: Build
+### Step 5: Build C++ Kernel (Optional)
 
 ```bash
-bash build.sh --rebuild
-```
-
----
-
-## GPU Acceleration (Optional)
-
-For NVIDIA GPU support, install CUDA toolkit (11.8+) before building.
-The build script auto-detects GPU and enables CUDA compilation.
-
-```bash
-# Install llama-cpp with CUDA support
-CMAKE_ARGS="-DLLAMA_CUDA=ON" pip install llama-cpp-python
 bash build.sh --rebuild
 ```
 
@@ -99,11 +90,13 @@ bash build.sh --rebuild
 ```bash
 # Health check
 curl http://localhost:5000/health
+# → {"status": "operational", "kernel": "down", "slm": "down", "rag_vectors": 0, "version": "2.0.0"}
 
-# Run test query
+# Run test query (requires API key header)
 curl -X POST http://localhost:5000/query \
   -H "Content-Type: application/json" \
-  -d '{"text": "Hello Synthesus", "mode": "dual"}'
+  -H "X-Api-Key: test-key-1234567890" \
+  -d '{"query": "Hello Synthesus"}'
 ```
 
 ---
@@ -113,29 +106,49 @@ curl -X POST http://localhost:5000/query \
 ```
 [FastAPI Server :5000]
         |
-   [HemiReconciler]  L=0.50 / R=0.30 / V=0.20
+   [HemiReconciler]
       /         \
 [Left Hemi]  [Right Hemi]
- (C++ Kernel)  (TinyLlama SLM)
-  9 Reasoners    Pattern-Based
-  PPBRS + SINN   Character Engine
-  KN Database    UNPC Engine
+ (C++ Kernel)  (ML Swarm micro-models)
+  Pattern Engine   SwarmEmbedder (TF-IDF+SVD)
+  PPBRS Router     Optional SLM (TinyLlama/Qwen)
+  KN Database      RAG Pipeline + FAISS
 ```
+
+## ML Swarm Embedding
+
+The heavyweight `sentence-transformers` + PyTorch stack has been replaced with
+`SwarmEmbedder`, a lightweight TF-IDF + SVD pipeline:
+
+| Property | Old (sentence-transformers) | New (SwarmEmbedder) |
+|---|---|---|
+| Dependencies | PyTorch (~2 GB), sentence-transformers | scikit-learn (~30 MB) |
+| Model size | ~80 MB (MiniLM) | ~50 KB (fitted TF-IDF) |
+| Embedding dim | 384 | 128 |
+| Latency | 5–15 ms/query | <1 ms/query |
+| Accuracy | Neural semantic | Char n-gram statistical |
+| GPU needed? | Optional CUDA | Never |
+
+The SwarmEmbedder fits lazily on the first corpus it encounters and can be
+swapped for an ONNX micro-model later without changing any API contracts.
 
 ## Directory Structure
 
 ```
 synthesus/
-  api/              # FastAPI server
+  api/              # FastAPI server (gateway.py)
   automation/       # Watchdog & telemetry
   characters/       # NPC character files (bio.json + patterns.json)
-  core/             # HemiReconciler, PPBRSRouter, ContextMemory
+  cognitive/        # SemanticMatcher, CognitiveEngine
+  core/             # HemisphereBridge, RAGPipeline, PatternEngine
   kernel/           # ThreadPool, MessageBus, MemoryAllocator
-  memory/           # KNDatabase, Working/Episodic/LongTerm/SelfPerception
+  memory/           # KNDatabase, Working/Episodic/LongTerm
+  ml/               # SwarmEmbedder, IntentClassifier, SentimentAnalyzer
   models/           # Model files (gitignored)
   modules/          # Python fallback, web scraper, vehicle AI
   onnx_bridge/      # GPU/CPU hardware router
   reasoning/        # 9 reasoning modules (SINN, PPBRS, Symbolic...)
+  scripts/          # Embedding migration pipeline
   static/           # Web dashboard
   unpc_engine/      # Universal NPC Character Engine
   vcu/              # 11 Virtual Control Units
@@ -147,12 +160,11 @@ synthesus/
 | Error | Fix |
 |---|---|
 | `ModuleNotFoundError: fastapi` | Run: `pip install fastapi uvicorn` |
-| `synthesus_kernel not found` | Run: `bash build.sh --rebuild` |
-| TinyLlama slow (~800ms) | Expected on CPU; GPU reduces to ~80ms |
-| Port 5000 in use | Change port in `api/fastapi_server.py` |
-| SQLite WAL errors | Delete `context.db` and restart |
+| `ModuleNotFoundError: sklearn` | Run: `pip install scikit-learn` |
+| `ModuleNotFoundError: faiss` | Run: `pip install faiss-cpu` |
+| Port 5000 in use | Change port: `uvicorn api.gateway:app --port 8000` |
+| SLM disabled warning | Install `llama-cpp-python` + download GGUF model |
 
 ## License
 
 MIT License - AIVM LLC
-/Str8biddness/synthesus/onnx_bridge/model_runner.py
