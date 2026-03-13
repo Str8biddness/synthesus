@@ -574,6 +574,44 @@ async def stats():
         "characters": list(_character_cache.keys()),
         "engines": list(_cognitive_engines.keys()),
         "sessions": len(_conversations),
+
+      # ─── Pattern Ingest Endpoint ──────────────────────────────────────────────────
+      _pe_mod = _import_module_direct('core.pattern_engine', str(PROJ_ROOT / 'core' / 'pattern_engine.py'))
+      PatternEngine = _pe_mod.PatternEngine
+  _pattern_engine: Optional[Any] = None
+
+class PatternIngestRequest(BaseModel):
+      phrase: str
+      source: str = 'zo_enrichment'
+      module: str = 'general'
+      confidence: float = 0.75
+      character_id: str = 'global'
+      response_template: str = ''
+
+  @app.post('/api/patterns/ingest')
+async def ingest_pattern(req: PatternIngestRequest):
+      """Ingest an enrichment pattern from Zo Computer or external automation."""
+      global _pattern_engine
+      if _pattern_engine is None:
+                _pattern_engine = PatternEngine(db_path=str(DATA_DIR / 'patterns.db'))
+            response = req.response_template or f'[Enriched: {req.phrase}] Domain: {req.module}. Source: {req.source}.'
+    pattern = _pattern_engine.add_pattern(
+              character_id=req.character_id,
+              pattern_type=req.module,
+              trigger=req.phrase,
+              response_template=response,
+              weight=req.confidence,
+              metadata={'source': req.source, 'module': req.module},
+          )
+    logger.info(f'Pattern ingested: {pattern.id} | trigger={pattern.trigger} | char={pattern.character_id}')
+    return {
+              'status': 'ok',
+              'pattern_id': pattern.id,
+              'trigger': pattern.trigger,
+              'character_id': pattern.character_id,
+              'pattern_type': pattern.pattern_type,
+              'weight': pattern.weight,
+          }
         "requests": _request_count,
     }
 
