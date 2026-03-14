@@ -574,6 +574,8 @@ async def stats():
         "characters": list(_character_cache.keys()),
         "engines": list(_cognitive_engines.keys()),
         "sessions": len(_conversations),
+              "requests": _request_count,
+          }
 
       # ─── Pattern Ingest Endpoint ──────────────────────────────────────────────────
       _pe_mod = _import_module_direct('core.pattern_engine', str(PROJ_ROOT / 'core' / 'pattern_engine.py'))
