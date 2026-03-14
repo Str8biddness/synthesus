@@ -181,7 +181,6 @@ class IntentClassifier:
                 C=5.0,
                 class_weight="balanced",
                 solver="lbfgs",
-                multi_class="multinomial",
             )),
         ])
 

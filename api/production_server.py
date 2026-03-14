@@ -29,9 +29,12 @@ import uuid
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from fastapi import FastAPI, HTTPException, Request, Depends, Header
+import faiss
+import numpy as np
+
+from fastapi import FastAPI, HTTPException, Request, Depends, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -48,19 +51,24 @@ PROJ_ROOT = Path(__file__).resolve().parent.parent
 
 sys.path.insert(0, str(PROJ_ROOT))
 
-# Direct imports — bypass core/__init__.py to avoid cascading import errors
-import importlib.util
-
-def _import_module_direct(module_name: str, file_path: str):
-    """Import a module directly from file path, bypassing package __init__."""
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
+# ─── Dynamic Module Imports ──────────────────────────────────────────
+def _import_module_direct(name: str, path: str):
+    import importlib.util
+    import sys
+    spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = mod
+    # Register in sys.modules BEFORE execution to avoid dataclass/decorator issues
+    sys.modules[name] = mod
     spec.loader.exec_module(mod)
     return mod
 
+# Dynamically import project modules
 _rag_mod = _import_module_direct("core.rag_pipeline", str(PROJ_ROOT / "core" / "rag_pipeline.py"))
 RAGPipeline = _rag_mod.RAGPipeline
+
+_factory_mod = _import_module_direct("character_factory_v2", str(PROJ_ROOT / "character_factory_v2.py"))
+CharacterFactory = _factory_mod.CharacterFactory
+CharacterSpec = _factory_mod.CharacterSpec
 
 try:
     from cognitive.cognitive_engine import CognitiveEngine
@@ -85,6 +93,8 @@ except (ImportError, Exception) as e:
 CHARACTERS_DIR = PROJ_ROOT / "characters"
 DATA_DIR = PROJ_ROOT / "data"
 STATIC_DIR = PROJ_ROOT / "static"
+INDEX_PATH = DATA_DIR / "faiss.index"
+METADATA_PATH = DATA_DIR / "faiss_metadata.json"
 
 API_KEY_HEADER = "X-API-Key"
 DEMO_RATE_LIMIT = 10  # requests per minute for unauthenticated
@@ -288,6 +298,130 @@ class CharacterInfo(BaseModel):
     personality_traits: List[str]
     ethics_disclosure: str
 
+
+class PatternIngest(BaseModel):
+    # Support both a list of patterns and a single pattern object
+    patterns: Optional[List[Dict[str, Any]]] = None
+    # For single pattern direct POST
+    pattern: Optional[str] = None
+    response: Optional[str] = None
+    domain: Optional[str] = None
+    # Character association
+    character_id: Optional[str] = Field(None, description="Target character for these patterns")
+    create_character: bool = Field(False, description="Whether to create the character if it doesn't exist")
+    source: Optional[str] = None
+    module: Optional[str] = None
+
+@app.post("/api/patterns/ingest")
+async def ingest_patterns(req: Request):
+    """Ingest new patterns into the FAISS index and metadata."""
+    global _rag
+    
+    # Auto-initialize RAG if it's missing
+    if not _rag:
+        logger.info("Initializing fresh RAG pipeline for ingestion...")
+        try:
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            _rag = RAGPipeline(
+                index_path=str(INDEX_PATH),
+                metadata_path=str(METADATA_PATH),
+                top_k=5,
+                score_threshold=0.5,
+            )
+            # If still no index (RAGPipeline didn't create one), force it
+            if not hasattr(_rag, "_index") or _rag._index is None:
+                _rag._index = faiss.IndexFlatIP(128)
+                _rag._metadata = []
+        except Exception as e:
+            logger.error(f"Failed to auto-init RAG: {e}")
+            raise HTTPException(500, f"RAG initialization failed: {e}")
+    
+    try:
+        body = await req.json()
+    except Exception:
+        raise HTTPException(400, "Invalid JSON")
+
+    # Normalize to a list of patterns
+    new_patterns = []
+    if isinstance(body, list):
+        new_patterns = body
+    elif isinstance(body, dict):
+        if "patterns" in body and isinstance(body["patterns"], list):
+            new_patterns = body["patterns"]
+        else:
+            # Single object
+            new_patterns = [body]
+    
+    if not new_patterns:
+        return {"status": "success", "added": 0}
+    
+    # ── Step 1: Extract and normalize patterns ──
+    char_id = body.get("character_id")
+    create_char = body.get("create_character", False)
+    
+    normalized = []
+    for p in new_patterns:
+        text = p.get("pattern") or p.get("phrase") or ""
+        resp = p.get("response") or p.get("response_template") or ""
+        src = p.get("source") or "zo_computer_agent"
+        dom = p.get("domain") or p.get("module") or "general"
+        # Per-pattern character override
+        p_char_id = p.get("character_id") or char_id
+        
+        if text:
+            item = {
+                "pattern": text,
+                "response": resp,
+                "source": src,
+                "domain": dom
+            }
+            if p_char_id:
+                item["character_id"] = p_char_id
+            normalized.append(item)
+    
+    if not normalized:
+        return {"status": "success", "added": 0}
+    
+    # ── Step 2: Handle character creation if needed ──
+    if char_id and create_char:
+        char_dir = CHARACTERS_DIR / char_id
+        if not char_dir.exists():
+            logger.info(f"Bootstrapping character: {char_id}")
+            try:
+                factory = CharacterFactory(characters_dir=str(CHARACTERS_DIR))
+                spec = CharacterSpec(
+                    name=char_id.capitalize(),
+                    id=char_id,
+                    archetype="scholar",  # Default archetype
+                    backstory=f"A synthetic intelligence specialized in {normalized[0].get('domain', 'general knowledge')}."
+                )
+                factory.generate(spec)
+                _load_character(char_id)
+            except Exception as e:
+                logger.error(f"Failed to bootstrap character {char_id}: {e}")
+                # We continue even if bootstrap fails, patterns will just be tagged with the ID
+    
+    # ── Step 3: Add to RAG pipeline ──
+    try:
+        # Use the RAGPipeline's built-in method which handles embedding and indexing
+        added_count = _rag.add_patterns(
+            patterns=normalized,
+            # We don't pass global character_id here because it's already in the normalized items
+        )
+        
+        # ── Step 4: Final save ──
+        _rag.save_index()
+            
+        logger.info(f"Ingested {added_count} new patterns (Target: {char_id or 'global'})")
+        return {
+            "status": "success", 
+            "added": added_count, 
+            "total": _rag.total_vectors,
+            "character_id": char_id
+        }
+    except Exception as e:
+        logger.error(f"Failed to ingest patterns: {e}")
+        raise HTTPException(500, f"Ingestion failed: {e}")
 
 # ─── Endpoints ───────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)

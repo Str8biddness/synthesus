@@ -424,7 +424,7 @@ class CognitiveEngine:
                 "tier": next((k for k, v in rel_result["tier"].items() if v), "stranger"),
                 "interactions": rel_result.get("interactions", 0),
             },
-            "last_interaction_time": self.tracker.get_last_turn_time(player_id),
+            "last_interaction_time": self.tracker.get_state(player_id).last_interaction,
         }
 
         # Check for proactive greeting override (goals/events/time)
@@ -551,6 +551,7 @@ class CognitiveEngine:
                 match_score=match_score,
                 pattern_id=matched_pattern.get("id", "unknown"),
                 start_time=start_time,
+                ml_context=ml_context,
             )
 
         elif escalation.should_escalate and thinking_layer_available:
@@ -691,13 +692,14 @@ class CognitiveEngine:
                 pattern_id=None,
                 start_time=start_time,
                 context=context,  # Pass context for goal evaluation
+                ml_context=ml_context,
             )
 
     def _build_result(
         self,
         response, source, confidence, emotion, rel_result,
         conv_context, world_result, match_score, pattern_id,
-        start_time, escalation=None, context=None,
+        start_time, escalation=None, context=None, ml_context=None,
     ) -> Dict[str, Any]:
         
         # ── Autonomous Goal Injection (Agentic Layer) ──
